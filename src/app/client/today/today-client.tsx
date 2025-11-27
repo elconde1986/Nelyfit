@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useTransition, useState } from 'react';
 import ReactConfetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
