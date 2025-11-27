@@ -381,19 +381,30 @@ export default function ClientTodayClient(props: Props) {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  disabled={isPending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      const res = await toggleWorkoutDone();
-                      handleGamificationResponse(res, 'workout');
-                    })
-                  }
-                  className="w-full"
-                >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  {lang === 'en' ? 'Mark workout done' : 'Marcar entrenamiento hecho'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    asChild
+                    className="flex-1"
+                  >
+                    <Link href={`/client/workout/start?workoutId=${workout.id}`}>
+                      <Dumbbell className="w-4 h-4 mr-2" />
+                      {lang === 'en' ? 'Start Workout' : 'Comenzar Entrenamiento'}
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={isPending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        const res = await toggleWorkoutDone();
+                        handleGamificationResponse(res, 'workout');
+                      })
+                    }
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    {lang === 'en' ? 'Skip' : 'Omitir'}
+                  </Button>
+                </div>
               </>
             )}
           </Card>
