@@ -249,6 +249,33 @@ export default function ClientTodayClient(props: Props) {
               </Button>
             </form>
           </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/billing">
+                {lang === 'en' ? 'Billing' : 'Facturación'}
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/community/groups">
+                {lang === 'en' ? 'Groups' : 'Grupos'}
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/nutrition/meal-plans">
+                {lang === 'en' ? 'Meal Plans' : 'Planes de Comida'}
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/tracking/weight-logs">
+                {lang === 'en' ? 'Weight Logs' : 'Registro de Peso'}
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/training/programs">
+                {lang === 'en' ? 'Programs' : 'Programas'}
+              </Link>
+            </Button>
+          </div>
         </header>
 
         {/* Notifications */}

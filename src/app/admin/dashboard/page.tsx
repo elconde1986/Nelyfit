@@ -86,7 +86,7 @@ export default async function AdminDashboardPage() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -112,7 +112,42 @@ export default async function AdminDashboardPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Reports</CardTitle>
+              <CardTitle>Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Link href="/admin/subscriptions" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <DollarSign className="w-4 h-4" />
+                Subscriptions
+              </Link>
+              <Link href="/admin/trials" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <TrendingUp className="w-4 h-4" />
+                Trials
+              </Link>
+              <Link href="/admin/exercises" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Dumbbell className="w-4 h-4" />
+                Exercises
+              </Link>
+              <Link href="/admin/programs" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Settings className="w-4 h-4" />
+                Programs
+              </Link>
+              <Link href="/admin/groups" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Users className="w-4 h-4" />
+                Groups
+              </Link>
+              <Link href="/admin/challenges" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <TrendingUp className="w-4 h-4" />
+                Challenges
+              </Link>
+              <Link href="/admin/leaderboards" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <TrendingUp className="w-4 h-4" />
+                Leaderboards
+              </Link>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Reports & Tracking</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Link href="/admin/reports/trial-conversion" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
@@ -122,6 +157,30 @@ export default async function AdminDashboardPage() {
               <Link href="/admin/reports/revenue" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
                 <DollarSign className="w-4 h-4" />
                 Revenue Insights
+              </Link>
+              <Link href="/admin/meal-plans" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Settings className="w-4 h-4" />
+                Meal Plans
+              </Link>
+              <Link href="/admin/grocery-lists" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Settings className="w-4 h-4" />
+                Grocery Lists
+              </Link>
+              <Link href="/admin/weight-logs" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <TrendingUp className="w-4 h-4" />
+                Weight Logs
+              </Link>
+              <Link href="/admin/body-measurements" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Users className="w-4 h-4" />
+                Body Measurements
+              </Link>
+              <Link href="/admin/progress-photos" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Users className="w-4 h-4" />
+                Progress Photos
+              </Link>
+              <Link href="/admin/workout-history" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Dumbbell className="w-4 h-4" />
+                Workout History
               </Link>
             </CardContent>
           </Card>

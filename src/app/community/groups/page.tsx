@@ -76,7 +76,7 @@ export default async function GroupsPage() {
           </div>
           {user.role === 'COACH' && (
             <Button asChild>
-              <Link href="/coach/groups/create">
+              <Link href="/community/groups/create">
                 <Plus className="w-4 h-4 mr-2" />
                 {lang === 'en' ? 'Create Group' : 'Crear Grupo'}
               </Link>
@@ -95,7 +95,7 @@ export default async function GroupsPage() {
               </p>
               {user.role === 'COACH' && (
                 <Button asChild>
-                  <Link href="/coach/groups/create">
+                  <Link href="/community/groups/create">
                     <Plus className="w-4 h-4 mr-2" />
                     {lang === 'en' ? 'Create Your First Group' : 'Crea Tu Primer Grupo'}
                   </Link>
