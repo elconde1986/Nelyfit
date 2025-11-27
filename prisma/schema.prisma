@@ -621,8 +621,10 @@ model ProgressPhoto {
   photoType String // front, side, back
   date      DateTime @default(now())
   notes     String?
+  sharedWithCoach Boolean @default(false) // Visibility: private or shared-with-coach
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, date])
 }
@@ -636,13 +638,27 @@ model BodyMeasurement {
   weight     Float? // in kg
   bodyFat    Float? // percentage
   muscleMass Float? // in kg
-  chest      Float? // in cm
-  waist      Float? // in cm
-  hips       Float? // in cm
-  arms       Float? // in cm
-  thighs     Float? // in cm
+  
+  // Upper body
+  neck      Float? // in cm
+  shoulders Float? // in cm
+  chest     Float? // in cm
+  waist     Float? // in cm
+  hips      Float? // in cm
+  bicepL    Float? // in cm
+  bicepR    Float? // in cm
+  forearmL  Float? // in cm
+  forearmR  Float? // in cm
+  
+  // Lower body
+  thighs    Float? // in cm (legacy, use thighL/thighR)
+  thighL    Float? // in cm
+  thighR    Float? // in cm
+  calfL     Float? // in cm
+  calfR     Float? // in cm
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, date])
 }
@@ -674,11 +690,16 @@ model MealPlan {
   userId String
 
   name     String
+  goal     String? // cutting, maintenance, bulking
   calories Int
   protein  Float // in grams
   carbs    Float // in grams
   fats     Float // in grams
   fiber    Float? // in grams
+  days     Int @default(1) // Days per cycle (1, 3, 7)
+  
+  createdBy  String // userId who created
+  assignedTo String? // clientId if assigned to specific client
 
   meals Meal[]
 
@@ -689,6 +710,7 @@ model MealPlan {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([assignedTo])
 }
 
 model Meal {
@@ -698,13 +720,16 @@ model Meal {
 
   name        String
   mealType    String // breakfast, lunch, dinner, snack
+  day         Int @default(1) // Day in cycle (1-7)
   calories    Int
   protein     Float
   carbs       Float
   fats        Float
   ingredients String[] // Grocery list items
+  notes       String? // Instructions/notes
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ============================================

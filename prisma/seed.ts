@@ -706,7 +706,7 @@ async function main() {
   // ============================================
   // CREATE BODY MEASUREMENTS
   // ============================================
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const measureDate = new Date();
     measureDate.setDate(measureDate.getDate() - (i * 7));
     
@@ -717,11 +717,48 @@ async function main() {
         weight: 70 - (i * 0.5),
         bodyFat: 20 - (i * 0.3),
         muscleMass: 50 + (i * 0.2),
+        neck: 38 + (i * 0.1),
+        shoulders: 110 + (i * 0.5),
         chest: 100 + (i * 1),
         waist: 85 - (i * 0.5),
         hips: 95,
-        arms: 30 + (i * 0.2),
-        thighs: 55 + (i * 0.3),
+        bicepL: 30 + (i * 0.2),
+        bicepR: 30.2 + (i * 0.2),
+        forearmL: 28 + (i * 0.1),
+        forearmR: 28.1 + (i * 0.1),
+        thighL: 55 + (i * 0.3),
+        thighR: 55.2 + (i * 0.3),
+        calfL: 36 + (i * 0.2),
+        calfR: 36.1 + (i * 0.2),
+      },
+    });
+  }
+  
+  // Add measurements for other clients
+  for (let i = 0; i < 3; i++) {
+    const measureDate = new Date();
+    measureDate.setDate(measureDate.getDate() - (i * 10));
+    
+    await prisma.bodyMeasurement.create({
+      data: {
+        userId: createdClients[1].user.id,
+        date: measureDate,
+        weight: 65 - (i * 0.3),
+        bodyFat: 22 - (i * 0.2),
+        muscleMass: 48 + (i * 0.15),
+        neck: 36 + (i * 0.1),
+        shoulders: 105 + (i * 0.4),
+        chest: 95 + (i * 0.8),
+        waist: 80 - (i * 0.4),
+        hips: 90,
+        bicepL: 28 + (i * 0.15),
+        bicepR: 28.1 + (i * 0.15),
+        forearmL: 26 + (i * 0.1),
+        forearmR: 26.1 + (i * 0.1),
+        thighL: 52 + (i * 0.25),
+        thighR: 52.2 + (i * 0.25),
+        calfL: 34 + (i * 0.15),
+        calfR: 34.1 + (i * 0.15),
       },
     });
   }
@@ -730,44 +767,139 @@ async function main() {
   // ============================================
   // CREATE MEAL PLANS
   // ============================================
+  // Create meal plan for client (assigned by coach)
   const mealPlan = await prisma.mealPlan.create({
     data: {
-      userId: createdClients[0].user.id,
+      userId: coach1.id, // Created by coach
       name: 'Balanced Nutrition Plan',
+      goal: 'maintenance',
       calories: 2000,
       protein: 150,
       carbs: 200,
       fats: 65,
       fiber: 30,
+      days: 7,
+      createdBy: coach1.id,
+      assignedTo: mainClient.id, // Assigned to first client
       startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       meals: {
         create: [
           {
             name: 'Oatmeal with Berries',
             mealType: 'breakfast',
+            day: 1,
             calories: 400,
             protein: 15,
             carbs: 60,
             fats: 10,
             ingredients: ['oats', 'blueberries', 'almond milk', 'honey'],
+            notes: 'Use steel-cut oats for better texture',
           },
           {
             name: 'Grilled Chicken Salad',
             mealType: 'lunch',
+            day: 1,
             calories: 500,
             protein: 40,
             carbs: 30,
             fats: 20,
             ingredients: ['chicken breast', 'mixed greens', 'olive oil', 'vegetables'],
+            notes: 'Grill chicken with herbs and lemon',
           },
           {
             name: 'Salmon with Quinoa',
             mealType: 'dinner',
+            day: 1,
             calories: 600,
             protein: 45,
             carbs: 50,
             fats: 25,
             ingredients: ['salmon', 'quinoa', 'broccoli', 'lemon'],
+            notes: 'Bake salmon at 400°F for 12-15 minutes',
+          },
+          // Day 2 meals
+          {
+            name: 'Greek Yogurt Parfait',
+            mealType: 'breakfast',
+            day: 2,
+            calories: 350,
+            protein: 20,
+            carbs: 45,
+            fats: 8,
+            ingredients: ['greek yogurt', 'granola', 'berries', 'honey'],
+          },
+          {
+            name: 'Turkey Wrap',
+            mealType: 'lunch',
+            day: 2,
+            calories: 450,
+            protein: 35,
+            carbs: 40,
+            fats: 15,
+            ingredients: ['turkey breast', 'whole wheat tortilla', 'lettuce', 'tomato', 'hummus'],
+          },
+          {
+            name: 'Beef Stir Fry',
+            mealType: 'dinner',
+            day: 2,
+            calories: 550,
+            protein: 42,
+            carbs: 45,
+            fats: 22,
+            ingredients: ['lean beef', 'brown rice', 'mixed vegetables', 'soy sauce'],
+          },
+        ],
+      },
+    },
+  });
+  
+  // Create another meal plan (cutting plan)
+  const cuttingPlan = await prisma.mealPlan.create({
+    data: {
+      userId: coach1.id,
+      name: 'Cutting Meal Plan',
+      goal: 'cutting',
+      calories: 1600,
+      protein: 140,
+      carbs: 120,
+      fats: 55,
+      fiber: 25,
+      days: 5,
+      createdBy: coach1.id,
+      assignedTo: createdClients[1]?.client?.id || null,
+      startDate: new Date(),
+      meals: {
+        create: [
+          {
+            name: 'Protein Smoothie',
+            mealType: 'breakfast',
+            day: 1,
+            calories: 300,
+            protein: 30,
+            carbs: 25,
+            fats: 8,
+            ingredients: ['protein powder', 'spinach', 'banana', 'almond milk'],
+          },
+          {
+            name: 'Chicken and Vegetables',
+            mealType: 'lunch',
+            day: 1,
+            calories: 400,
+            protein: 45,
+            carbs: 20,
+            fats: 15,
+            ingredients: ['chicken breast', 'broccoli', 'carrots', 'olive oil'],
+          },
+          {
+            name: 'Baked Cod with Asparagus',
+            mealType: 'dinner',
+            day: 1,
+            calories: 350,
+            protein: 40,
+            carbs: 15,
+            fats: 12,
+            ingredients: ['cod fillet', 'asparagus', 'lemon', 'herbs'],
           },
         ],
       },
@@ -824,6 +956,37 @@ async function main() {
   });
   console.log('✅ Community groups and challenges created');
 
+  // Add more challenge participants for testing
+  const challenge = await prisma.challenge.findFirst({
+    where: { name: '30-Day Challenge' },
+  });
+
+  if (challenge) {
+    // Add participants for all clients
+    for (let i = 0; i < createdClients.length; i++) {
+      const existing = await prisma.challengeParticipant.findUnique({
+        where: {
+          challengeId_userId: {
+            challengeId: challenge.id,
+            userId: createdClients[i].user.id,
+          },
+        },
+      });
+
+      if (!existing) {
+        await prisma.challengeParticipant.create({
+          data: {
+            challengeId: challenge.id,
+            userId: createdClients[i].user.id,
+            progress: Math.floor(Math.random() * 30) + 5, // Random progress 5-35
+            rank: i + 1,
+          },
+        });
+      }
+    }
+  }
+  console.log('✅ Challenge participants updated');
+
   // ============================================
   // CREATE COACH NOTES
   // ============================================
@@ -846,6 +1009,46 @@ async function main() {
     ],
   });
   console.log('✅ Coach notes created');
+
+  // ============================================
+  // CREATE PROGRESS PHOTOS
+  // ============================================
+  const photoPoses = ['front', 'side', 'back'];
+  for (let i = 0; i < 6; i++) {
+    const photoDate = new Date();
+    photoDate.setDate(photoDate.getDate() - (i * 14)); // Every 2 weeks
+    
+    await prisma.progressPhoto.create({
+      data: {
+        userId: createdClients[0].user.id,
+        photoUrl: `https://picsum.photos/400/600?random=${i + 100}`, // Placeholder image
+        photoType: photoPoses[i % photoPoses.length],
+        date: photoDate,
+        notes: i === 0 ? 'Starting point' : `Progress update - Week ${i * 2}`,
+        sharedWithCoach: i % 2 === 0, // Share every other photo
+      },
+    });
+  }
+  
+  // Add photos for second client
+  if (createdClients[1]) {
+    for (let i = 0; i < 4; i++) {
+      const photoDate = new Date();
+      photoDate.setDate(photoDate.getDate() - (i * 21)); // Every 3 weeks
+      
+      await prisma.progressPhoto.create({
+        data: {
+          userId: createdClients[1].user.id,
+          photoUrl: `https://picsum.photos/400/600?random=${i + 200}`,
+          photoType: photoPoses[i % photoPoses.length],
+          date: photoDate,
+          notes: `Progress check - Month ${i + 1}`,
+          sharedWithCoach: true,
+        },
+      });
+    }
+  }
+  console.log('✅ Progress photos created');
 
   // ============================================
   // CREATE SAMPLE WORKOUT SESSION
@@ -930,6 +1133,111 @@ async function main() {
 
     console.log('✅ Sample workout session created with set logs');
   }
+
+  // ============================================
+  // CREATE ADDITIONAL WORKOUT SESSIONS FOR TESTING
+  // ============================================
+  if (mainClientUser && structuredWorkout) {
+    // Create sessions for past days to test program map
+    const program = await prisma.program.findFirst({
+      where: { name: '4-Week Strength Builder' },
+      include: {
+        days: {
+          orderBy: { dayIndex: 'asc' },
+          include: { workout: true },
+        },
+      },
+    });
+
+    // Get client record with program start date
+    const clientRecord = await prisma.client.findUnique({
+      where: { id: mainClient.id },
+    });
+
+    if (program && clientRecord?.programStartDate) {
+      const startOfDayHelper = (d: Date) => {
+        const date = new Date(d);
+        date.setHours(0, 0, 0, 0);
+        return date;
+      };
+      const start = startOfDayHelper(clientRecord.programStartDate);
+      
+      // Create completed sessions for days 1, 3, 5 (workout days)
+      const workoutDays = [1, 3, 5];
+      for (const dayIndex of workoutDays) {
+        const programDay = program.days.find((d) => d.dayIndex === dayIndex && !d.isRestDay);
+        if (programDay && programDay.workout) {
+          const sessionDate = new Date(start);
+          sessionDate.setDate(start.getDate() + dayIndex - 1);
+          const sessionStart = startOfDayHelper(sessionDate);
+          
+          const existingSession = await prisma.workoutSession.findFirst({
+            where: {
+              clientId: mainClientUser.id,
+              programDayId: programDay.id,
+              dateTimeStarted: {
+                gte: sessionStart,
+                lt: new Date(sessionStart.getTime() + 24 * 60 * 60 * 1000),
+              },
+            },
+          });
+
+          if (!existingSession) {
+            const session = await prisma.workoutSession.create({
+              data: {
+                clientId: mainClientUser.id,
+                workoutId: programDay.workout.id,
+                programDayId: programDay.id,
+                dateTimeStarted: new Date(sessionDate.getTime() + 8 * 60 * 60 * 1000), // 8 AM
+                dateTimeCompleted: new Date(sessionDate.getTime() + 8 * 60 * 60 * 1000 + 45 * 60 * 1000), // 45 min later
+                status: 'COMPLETED',
+                clientNotes: `Completed workout for day ${dayIndex}`,
+              },
+            });
+
+            // Create sample set logs
+            const workoutExercises = await prisma.workoutExercise.findMany({
+              where: {
+                block: {
+                  section: {
+                    workoutId: programDay.workout.id,
+                  },
+                },
+              },
+              take: 2, // Just 2 exercises for seed
+            });
+
+            for (const exercise of workoutExercises) {
+              const targetRepsArray = Array.isArray(exercise.targetRepsBySet)
+                ? (exercise.targetRepsBySet as number[])
+                : [8, 8, 6];
+              
+              for (let i = 0; i < Math.min(3, targetRepsArray.length); i++) {
+                const targetRep = typeof targetRepsArray[i] === 'number' ? targetRepsArray[i] : 8;
+                await prisma.exerciseSetLog.create({
+                  data: {
+                    sessionId: session.id,
+                    workoutExerciseId: exercise.id,
+                    exerciseName: exercise.name,
+                    setNumber: i + 1,
+                    targetReps: targetRep,
+                    targetWeight: 60 + (i * 5),
+                    targetUnit: 'kg',
+                    actualReps: targetRep,
+                    actualWeight: 60 + (i * 5),
+                    actualUnit: 'kg',
+                    feelingCode: i === targetRepsArray.length - 1 ? 'HARD' : 'GOOD_CHALLENGE',
+                    feelingEmoji: i === targetRepsArray.length - 1 ? '😓' : '🙂',
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  console.log('✅ Additional workout sessions created for testing');
 
   console.log('\n🎉 Comprehensive seed completed successfully!');
   console.log('\n📋 Test Accounts:');

@@ -48,11 +48,31 @@ export default async function MealPlansPage() {
                 {lang === 'en' ? 'Meal Plans' : 'Planes de Comida'}
               </span>
             </h1>
+            {user.role === 'COACH' && (
+              <Button asChild className="mt-4">
+                <Link href="/nutrition/meal-plans/create">
+                  <Plus className="w-4 h-4 mr-2" />
+                  {lang === 'en' ? 'Create Meal Plan' : 'Crear Plan de Comida'}
+                </Link>
+              </Button>
+            )}
             <p className="text-slate-400 text-sm mt-1">
               {lang === 'en'
                 ? 'View and manage your nutrition plans'
                 : 'Ver y gestiona tus planes de nutrición'}
             </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" asChild>
+              <a href="/nutrition/macro-calculator">
+                {lang === 'en' ? 'Macro Calculator' : 'Calculadora de Macros'}
+              </a>
+            </Button>
+            <Button variant="secondary" asChild>
+              <a href="/nutrition/grocery-lists">
+                {lang === 'en' ? 'Grocery List' : 'Lista de Compras'}
+              </a>
+            </Button>
           </div>
         </header>
 
@@ -131,9 +151,18 @@ export default async function MealPlansPage() {
                         </div>
                       </div>
                     </div>
-                    <Button variant="secondary" size="sm">
-                      {lang === 'en' ? 'View Details' : 'Ver Detalles'}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button variant="secondary" size="sm" asChild>
+                        <a href={`/nutrition/meal-plans/${plan.id}`}>
+                          {lang === 'en' ? 'View Details' : 'Ver Detalles'}
+                        </a>
+                      </Button>
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href="/nutrition/macro-calculator">
+                          {lang === 'en' ? 'Calculate Macros' : 'Calcular Macros'}
+                        </a>
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

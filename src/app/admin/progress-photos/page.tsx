@@ -25,7 +25,7 @@ export default async function AdminProgressPhotosPage() {
 
   const stats = {
     total: await prisma.progressPhoto.count(),
-    uniqueUsers: new Set(photos.map(p => p.userId)).size,
+    uniqueUsers: new Set(photos.map((p: any) => p.userId)).size,
   };
 
   return (
@@ -69,7 +69,7 @@ export default async function AdminProgressPhotosPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {photos.map((photo) => (
+                {photos.map((photo: any) => (
                 <div
                   key={photo.id}
                   className="p-4 rounded-lg bg-slate-900/60 border border-slate-800"

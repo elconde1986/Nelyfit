@@ -45,6 +45,7 @@ type Props = {
   initialLang: 'en' | 'es';
   notifications: { id: string; title: string; body: string }[];
   programDayTitle: string | null;
+  todaySession: any;
 };
 
 type Lang = 'en' | 'es';
@@ -124,6 +125,7 @@ export default function ClientTodayClient(props: Props) {
     initialLang,
     notifications,
     programDayTitle,
+    todaySession,
   } = props;
 
   const [lang, setLang] = useState<Lang>(initialLang || 'en');
@@ -409,15 +411,57 @@ export default function ClientTodayClient(props: Props) {
                   ))}
                 </ul>
                 <div className="flex gap-2">
-                  <Button
-                    asChild
-                    className="flex-1"
-                  >
-                    <Link href={`/client/workout/start?workoutId=${workout.id}`}>
+                  {todaySession?.status === 'IN_PROGRESS' ? (
+                    <Button
+                      className="flex-1"
+                      onClick={() => {
+                        window.location.href = `/client/workout/${todaySession.id}`;
+                      }}
+                    >
+                      <Dumbbell className="w-4 h-4 mr-2" />
+                      {lang === 'en' ? 'Resume Workout' : 'Continuar Entrenamiento'}
+                    </Button>
+                  ) : todaySession?.status === 'COMPLETED' ? (
+                    <Button
+                      variant="secondary"
+                      className="flex-1"
+                      onClick={() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        window.location.href = `/client/program-map/day/${today}`;
+                      }}
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {lang === 'en' ? 'View Log' : 'Ver Registro'}
+                    </Button>
+                  ) : (
+                    <Button
+                      className="flex-1"
+                      disabled={isPending}
+                      onClick={() =>
+                        startTransition(async () => {
+                          try {
+                            const res = await fetch('/api/client/workouts/start', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({}),
+                            });
+                            const data = await res.json();
+                            if (data.sessionId) {
+                              window.location.href = `/client/workout/${data.sessionId}`;
+                            } else {
+                              alert(lang === 'en' ? 'Failed to start workout' : 'Error al iniciar entrenamiento');
+                            }
+                          } catch (error) {
+                            console.error('Error starting workout:', error);
+                            alert(lang === 'en' ? 'Error starting workout' : 'Error al iniciar entrenamiento');
+                          }
+                        })
+                      }
+                    >
                       <Dumbbell className="w-4 h-4 mr-2" />
                       {lang === 'en' ? 'Start Workout' : 'Comenzar Entrenamiento'}
-                    </Link>
-                  </Button>
+                    </Button>
+                  )}
                   <Button
                     variant="secondary"
                     disabled={isPending}

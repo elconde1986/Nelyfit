@@ -88,7 +88,7 @@ export default async function AdminLeaderboardsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {topUsersByXP.map((profile, index) => (
+                {topUsersByXP.map((profile: any, index: number) => (
                   <div
                     key={profile.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-900/60"
@@ -125,7 +125,7 @@ export default async function AdminLeaderboardsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {topUsersByStreak.map((profile, index) => (
+                {topUsersByStreak.map((profile: any, index: number) => (
                   <div
                     key={profile.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-900/60"
@@ -162,7 +162,7 @@ export default async function AdminLeaderboardsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {topUsersByWorkouts.map((profile, index) => (
+                {topUsersByWorkouts.map((profile: any, index: number) => (
                   <div
                     key={profile.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-900/60"
