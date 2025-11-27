@@ -183,6 +183,7 @@ model User {
   redeemedCodes         TemporaryCodeRedemption[]
   groupMemberships      GroupMember[]
   challengeParticipants ChallengeParticipant[]
+  coachVideos           CoachExerciseVideo[]      @relation("CoachVideos")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -305,6 +306,8 @@ model Client {
 
   programStartDate DateTime?
 
+  programAssignments ClientProgramAssignment[]
+
   logs          CompletionLog[]
   gamification  GamificationProfile?
   preferredLang String               @default("en")
@@ -320,7 +323,14 @@ model Client {
 model Program {
   id      String  @id @default(cuid())
   name    String
+  description String?
   goal    String?
+  goalTags String[] // Array of goal tags (strength, fat loss, etc.)
+  difficulty String? // beginner/intermediate/advanced
+  totalWeeks Int @default(4) // 1-16 weeks
+  targetDaysPerWeek Int @default(3) // 2-7 days
+  visibility TemplateVisibility @default(PRIVATE)
+  status String @default("DRAFT") // DRAFT / ACTIVE / ARCHIVED
   coach   User?   @relation("ProgramCoach", fields: [coachId], references: [id])
   coachId String?
 
@@ -328,6 +338,7 @@ model Program {
   workouts Workout[]
   days     ProgramDay[]
   weeks    ProgramWeek[]
+  assignments ClientProgramAssignment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -340,6 +351,10 @@ model ProgramWeek {
   weekNumber Int
   title      String?
   notes      String?
+  weekFocus String? // NORMAL / BUILD / DELOAD / PEAK
+  autoProgressionRules Json? // JSON for progression rules
+
+  days ProgramDay[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -466,8 +481,12 @@ model Exercise {
   equipment         String?
   musclesTargeted   String[]
   isLibraryExercise Boolean  @default(false)
+  defaultVideoUrl String? // Platform-wide demo video
+  defaultThumbnailUrl String?
+  defaultVideoSourceType String? // YOUTUBE | PRIVATE
 
   workoutExercises WorkoutExercise[]
+  coachVideos CoachExerciseVideo[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -477,12 +496,16 @@ model ProgramDay {
   id        String   @id @default(cuid())
   program   Program  @relation(fields: [programId], references: [id])
   programId String
-  dayIndex  Int
+  programWeek ProgramWeek? @relation(fields: [programWeekId], references: [id])
+  programWeekId String?
+  dayIndex  Int // 1-7 (day of week)
   title     String
   workout   Workout? @relation(fields: [workoutId], references: [id])
   workoutId String?
   isRestDay Boolean  @default(false)
-  notes     String?
+  notes     String? // Day-level notes for client
+  intensityOverride String? // EASY / NORMAL / HARD
+  tags String[] // e.g., "mobility focused"
 
   sessions WorkoutSession[]
 
@@ -745,6 +768,60 @@ model ChallengeParticipant {
   joinedAt DateTime @default(now())
 
   @@unique([challengeId, userId])
+}
+
+// ============================================
+// COACH EXERCISE VIDEOS
+// ============================================
+
+model CoachExerciseVideo {
+  id          String   @id @default(cuid())
+  coach       User     @relation("CoachVideos", fields: [coachId], references: [id])
+  coachId     String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id])
+  exerciseId  String
+  
+  status      String   @default("ACTIVE") // ACTIVE | ARCHIVED | BLOCKED
+  storageType String   @default("YOUTUBE") // YOUTUBE | PRIVATE
+  videoUrl    String
+  thumbnailUrl String?
+  durationSeconds Int?
+  
+  title       String
+  description String?
+  language    String   @default("en") // en | es
+  variantType String? // TUTORIAL | QUICK_CUE | REGRESSION | ADVANCED | WARMUP | OTHER
+  isPrimary   Boolean  @default(false)
+  
+  lastUsedAt  DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([coachId, exerciseId, isPrimary]) // Only one primary per coach+exercise
+  @@index([coachId, exerciseId])
+}
+
+// ============================================
+// CLIENT PROGRAM ASSIGNMENTS
+// ============================================
+
+model ClientProgramAssignment {
+  id        String   @id @default(cuid())
+  client    Client   @relation(fields: [clientId], references: [id])
+  clientId  String
+  program   Program  @relation(fields: [programId], references: [id])
+  programId String
+  
+  startDate DateTime
+  status    String   @default("ACTIVE") // ACTIVE | COMPLETED | CANCELLED
+  lastSyncedAt DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, programId, status]) // One active assignment per client+program
+  @@index([clientId, status])
 }
 
 // ============================================
