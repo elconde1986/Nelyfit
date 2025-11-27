@@ -127,8 +127,7 @@ ADD COLUMN "equipment" TEXT,
 ADD COLUMN "musclesTargeted" TEXT[] DEFAULT ARRAY[]::TEXT[],
 ADD COLUMN "isLibraryExercise" BOOLEAN DEFAULT false;
 
--- AlterTable
-ALTER TABLE "ProgramDay" ADD COLUMN "sessions" TEXT[];
+-- Note: ProgramDay.sessions is a relation, not a column - handled by foreign key
 
 -- CreateIndex
 CREATE INDEX "WorkoutSession_clientId_dateTimeStarted_idx" ON "WorkoutSession"("clientId", "dateTimeStarted");
