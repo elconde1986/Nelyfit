@@ -92,7 +92,7 @@
 
 /* Mobile optimizations */
 @media (max-width: 640px) {
-  body {
+body {
     @apply text-sm;
   }
 }

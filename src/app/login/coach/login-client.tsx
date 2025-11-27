@@ -85,9 +85,9 @@ export default function CoachLoginClient({ initialLang }: { initialLang: Lang })
                     name="email"
                     type="email"
                     required
-                    defaultValue="coach@nelyfit.demo"
+                    defaultValue="coach@nelsyfit.demo"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="coach@nelyfit.demo"
+                    placeholder="coach@nelsyfit.demo"
                   />
                 </div>
               </div>
@@ -127,7 +127,7 @@ export default function CoachLoginClient({ initialLang }: { initialLang: Lang })
                 {t.demoCredentials}
               </p>
               <div className="text-xs text-center space-y-1 text-slate-400">
-                <p>Email: coach@nelyfit.demo</p>
+                <p>Email: coach@nelsyfit.demo</p>
                 <p>Password: demo</p>
               </div>
             </div>

@@ -1,6 +1,6 @@
 {
-  "name": "NelyFit - Gamified Fitness Coaching",
-  "short_name": "NelyFit",
+  "name": "NelsyFit - Gamified Fitness Coaching",
+  "short_name": "NelsyFit",
   "description": "Gamified fitness coaching with Duolingo-style programs, badges, streaks, and more",
   "start_url": "/",
   "display": "standalone",

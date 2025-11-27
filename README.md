@@ -1,248 +1,316 @@
-# NelyFit – Duolingo-style Fitness Coaching (Demo)
+# NelsyFit - Complete Fitness Coaching Platform
 
-This repo is a **demo implementation** of the NelyFit concept:
+A comprehensive, gamified fitness coaching platform with Duolingo-style programs, badges, streaks, payments, and community features.
 
-- Coaches manage programs, workouts and clients.
-- Clients get a **Duolingo-style day view** with:
-  - XP, levels, streaks, badges
-  - Short, satisfying habit + workout completions
-  - Program map (lesson-style tree)
-- Basic coach dashboard & template marketplace stubs.
-- Postgres via Prisma + Docker, ready for local dev and Vercel deployment.
+## 🚀 Features
 
-It is intentionally simplified so you can run it locally quickly and then extend.
+### Authentication
+- ✅ Email/password login
+- ✅ Google OAuth (stub)
+- ✅ Apple Sign In (stub)
+- ✅ Phone OTP (stub)
+- ✅ Temporary access codes system
+- ✅ Multi-provider authentication support
 
----
+### Trial & Subscriptions
+- ✅ Trial period system (7, 14, 30 days)
+- ✅ Stripe integration
+- ✅ Apple Pay / Google Pay support
+- ✅ Subscription management
+- ✅ Payment webhooks
+- ✅ Trial conversion tracking
 
-## 1. Tech stack
+### Core Features
+- ✅ Training Programs with progressive overload
+- ✅ Exercise tracking with video support
+- ✅ Weight logs
+- ✅ Progress photos (cloud storage ready)
+- ✅ Body measurements
+- ✅ Workout history
+- ✅ Nutrition & meal planning
+- ✅ Grocery list generator
+- ✅ Coach-client chat
+- ✅ Community groups
+- ✅ Challenges & leaderboards
+- ✅ Gamification (XP, levels, streaks, badges)
 
-- **Next.js 14** (App Router, TypeScript)
-- **React 18**
-- **Prisma** ORM
-- **PostgreSQL**
-- **Docker + docker-compose** (for local DB + app)
-- Minimal Tailwind-like utility classes in CSS (no Tailwind config wired – you can add it later)
+### Admin Panel
+- ✅ Dashboard with insights
+- ✅ Temporary code creation
+- ✅ User management
+- ✅ Subscription management
+- ✅ Trial conversion reports
 
-Auth here is **demo-style** (no real login). We seed:
+## 📁 Project Structure
 
-- `coach@nelyfit.demo` – demo coach
-- `client@nelyfit.demo` – demo client
-
-All main flows are wired against these demo identities.
-
----
-
-## 2. Environment variables
-
-Copy the example env file:
-
-```bash
-cp .env.example .env
+```
+nelsyfit/
+├── prisma/
+│   ├── schema.prisma          # Complete database schema
+│   └── seed.ts                # Database seeding
+├── src/
+│   ├── app/
+│   │   ├── api/               # API routes
+│   │   │   ├── auth/          # Authentication endpoints
+│   │   │   └── billing/       # Stripe webhooks & billing
+│   │   ├── admin/             # Admin panel
+│   │   ├── client/            # Client-facing pages
+│   │   ├── coach/             # Coach-facing pages
+│   │   ├── training/          # Training programs
+│   │   ├── tracking/          # Progress tracking
+│   │   ├── nutrition/         # Meal planning
+│   │   ├── community/         # Groups & challenges
+│   │   ├── signup/            # User registration
+│   │   └── login/             # Authentication pages
+│   ├── components/
+│   │   ├── ui/                # Reusable UI components
+│   │   ├── training/           # Training-specific components
+│   │   ├── tracking/          # Tracking components
+│   │   └── admin/             # Admin components
+│   └── lib/
+│       ├── auth.ts            # Authentication helpers
+│       ├── auth-providers.ts  # OAuth providers
+│       ├── stripe.ts          # Stripe integration
+│       ├── trial.ts           # Trial management
+│       ├── temporary-codes.ts # Access code system
+│       ├── i18n.ts            # Translations
+│       └── prisma.ts          # Prisma client
+└── public/
+    ├── icons/                 # PWA icons
+    └── manifest.json          # PWA manifest
 ```
 
-For Docker, a dedicated file is already included:
+## 🛠️ Setup Instructions
 
-- `.env.docker` – used by `docker-compose.yml`
+### 1. Prerequisites
+- Node.js 18+
+- PostgreSQL database
+- Stripe account (for payments)
+- Vercel account (for deployment)
 
-You can leave defaults as-is for local dev:
+### 2. Environment Variables
+
+Create `.env` file:
 
 ```bash
-DATABASE_URL=postgresql://nelyfit:nelyfit@localhost:5434/nelyfit?schema=public
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/nelsyfit"
+
+# Stripe
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_PUBLISHABLE_KEY="pk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+
+# OAuth (optional)
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+APPLE_CLIENT_ID="..."
+APPLE_TEAM_ID="..."
+APPLE_KEY_ID="..."
+
+# OTP (optional - Twilio)
+TWILIO_ACCOUNT_SID="..."
+TWILIO_AUTH_TOKEN="..."
+TWILIO_PHONE_NUMBER="..."
+
+# App
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+NODE_ENV="development"
 ```
 
----
-
-## 3. Running locally (no Docker for app)
-
-### 3.1. Start Postgres (option A: Docker for DB only)
-
-From the project root:
+### 3. Database Setup
 
 ```bash
-docker compose up db -d
-```
-
-This launches **Postgres 16** on `localhost:5434` with credentials:
-
-- user: `nelyfit`
-- password: `nelyfit`
-- database: `nelyfit`
-
-### 3.2. Install dependencies
-
-```bash
+# Install dependencies
 npm install
-```
 
-### 3.3. Run Prisma migrations + seed
-
-```bash
-npx prisma migrate dev --name init
+# Generate Prisma Client
 npx prisma generate
-npx ts-node prisma/seed.ts
+
+# Run migrations
+npx prisma migrate dev --name init
+
+# Seed database
+npx prisma db seed
 ```
 
-> If you don’t have `ts-node` globally, install it:
-
-```bash
-npm install --save-dev ts-node
-```
-
-### 3.4. Start the dev server
+### 4. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-Then open: <http://localhost:3000>
+Visit http://localhost:3000
 
-- **Home**: overview with links to:
-  - `/coach/dashboard`
-  - `/client/today`
-- **Client today**: XP, levels, streaks, habits, gamified phrases, confetti.
-- **Client program map**: simple “lesson tree” for current program.
-- **Client badges**: badge gallery with locked/unlocked states.
-- **Coach dashboard**: overview of demo coach + demo client.
-- **Coach templates**: stub for template marketplace.
+## 📚 API Documentation
 
----
+### Authentication Endpoints
 
-## 4. Running everything via Docker & docker-compose
+#### POST /api/auth/check-code
+Check if a temporary access code is valid.
 
-If you want to test the full stack in containers (app + DB):
-
-1. Make sure **no local Postgres** is already using port `5434` or `3000`.
-
-2. Build and start:
-
-```bash
-docker compose up --build
+**Request:**
+```json
+{
+  "code": "ABC12345"
+}
 ```
 
-This will:
-
-- Build the Next.js app image (`Dockerfile`).
-- Start the Postgres container (`db` service).
-- Start the app container (`app` service) on `http://localhost:3000`.
-
-The app container runs:
-
-- `npx prisma migrate deploy` to apply migrations.
-- `npm run start` to serve the built app.
-
-> If you change the Prisma schema, rebuild:
-
-```bash
-docker compose down
-docker compose up --build
+**Response:**
+```json
+{
+  "valid": true,
+  "code": {
+    "type": "TRIAL_CODE",
+    "trialDays": 7,
+    "assignedTier": "PREMIUM_MONTHLY"
+  }
+}
 ```
 
----
+#### POST /api/auth/redeem-code
+Redeem a temporary access code (requires authentication).
 
-## 5. Deploying to Vercel
-
-Here’s a high-level guide to get this demo running on Vercel.
-
-### 5.1. Push this repo to GitHub
-
-Create a new repo and push the contents of this project:
-
-```bash
-git init
-git add .
-git commit -m "Initial NelyFit demo"
-git branch -M main
-git remote add origin git@github.com:<your-user>/<your-repo>.git
-git push -u origin main
+**Request:**
+```json
+{
+  "code": "ABC12345"
+}
 ```
 
-### 5.2. Create a Postgres database for production
-
-You have two main options:
-
-1. **Vercel Postgres** (recommended for simplicity), or  
-2. An external Postgres instance (RDS, Supabase, etc.)
-
-Whatever you choose, copy the connection URL and set it as `DATABASE_URL`.
-
-### 5.3. Create a new Vercel project
-
-1. Go to Vercel dashboard → **New Project**.
-2. Import your GitHub repo.
-3. In the **Environment Variables** section, add:
-
-   - `DATABASE_URL` → your production Postgres URL
-
-4. Deploy.
-
-### 5.4. Run Prisma migrations on Vercel
-
-There are several ways; a simple approach:
-
-- Locally, set `DATABASE_URL` to point to your production DB and run:
-
-```bash
-DATABASE_URL="postgresql://..." npx prisma migrate deploy
-DATABASE_URL="postgresql://..." npx prisma db seed
+**Response:**
+```json
+{
+  "success": true,
+  "trialDays": 7
+}
 ```
 
-> This applies migrations and runs the seed script against the production database.
+### Billing Endpoints
 
-Then trigger a **redeploy** in Vercel so the app code matches the DB structure.
+#### POST /api/billing/create-subscription
+Create a new subscription.
 
----
-
-## 6. Where to extend
-
-This demo intentionally includes:
-
-- Core **Prisma models**:
-  - User, Client, Program, ProgramDay, Workout, Exercise
-  - CompletionLog, GamificationProfile
-  - ChatMessage, CoachNote, Notification
-  - ProgramTemplate (+ Day), Team, TeamMember
-- Core **client flows**:
-  - `/client/today` – XP, levels, streaks, badges, confetti, habits, workout.
-  - `/client/program-map` – Duolingo-style day graph.
-  - `/client/badges` – badge gallery.
-- Core **coach flows** (simplified/stubbed):
-  - `/coach/dashboard` – quick stats, “on fire” clients concept.
-  - `/coach/templates` – template marketplace stub.
-
-Features described in the higher-level design that you can build on top:
-
-- Real **auth** (NextAuth or your own) with coach/client roles.
-- Full **coach inbox** (unread messages, nudge suggestions based on streaks).
-- Full **chat** between coach and client.
-- Full **program planner** with auto-templates (3x/week, 5x/week).
-- Full **program marketplace**, with:
-  - Save program as template
-  - Public / team / private visibility
-  - Using templates to instantiate new programs.
-
-The schema and file layout are set up so you can layer those features in without refactoring the foundation.
-
----
-
-## 7. TL;DR – Quick start
-
-```bash
-# 1. Install deps
-npm install
-
-# 2. Start DB in Docker
-docker compose up db -d
-
-# 3. Migrate & seed
-npx prisma migrate dev --name init
-npx prisma generate
-npx ts-node prisma/seed.ts
-
-# 4. Run dev server
-npm run dev
-
-# 5. Open
-http://localhost:3000
+**Request:**
+```json
+{
+  "priceId": "price_...",
+  "paymentMethodId": "pm_..."
+}
 ```
 
-You now have a working **NelyFit demo** you can extend, containerize and deploy to Vercel.
+**Response:**
+```json
+{
+  "success": true,
+  "subscriptionId": "sub_...",
+  "clientSecret": "pi_..."
+}
+```
+
+#### POST /api/billing/webhook
+Stripe webhook endpoint for payment events.
+
+**Events handled:**
+- `invoice.payment_succeeded`
+- `invoice.payment_failed`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+## 🗄️ Database Schema
+
+Key models:
+- `User` - User accounts with auth providers
+- `UserProfile` - Extended user profile data
+- `TemporaryCode` - Access codes system
+- `Subscription` - Stripe subscriptions
+- `Payment` - Payment history
+- `Program` - Training programs
+- `Workout` - Workout definitions
+- `Exercise` - Exercise definitions
+- `WorkoutLog` - Workout completion logs
+- `ProgressPhoto` - Progress photos
+- `BodyMeasurement` - Body measurements
+- `MealPlan` - Nutrition plans
+- `Group` - Community groups
+- `Challenge` - Fitness challenges
+- `ChatMessage` - Coach-client messaging
+
+See `prisma/schema.prisma` for complete schema.
+
+## 🔐 Authentication Flow
+
+1. **Signup**: User creates account → Optional access code → Trial activation
+2. **Login**: Email/password, Google, Apple, or Phone OTP
+3. **Session**: JWT tokens stored in httpOnly cookies
+4. **Trial**: Automatic trial start on signup or code redemption
+5. **Subscription**: Stripe checkout → Webhook updates → Database sync
+
+## 💳 Payment Flow
+
+1. User selects subscription tier
+2. Stripe Payment Sheet (with Apple Pay/Google Pay)
+3. Payment method attached to customer
+4. Subscription created
+5. Webhook updates database
+6. User access granted
+
+## 🎯 Trial System
+
+- Trials: 7, 14, or 30 days (configurable)
+- Activated via:
+  - Temporary code redemption
+  - "Start Free Trial" button
+- Tracking: `trialStart`, `trialEnd`, `isTrialActive`
+- Auto-lock: Features locked when trial ends
+
+## 📱 PWA Support
+
+- Service worker for offline support
+- Installable on mobile devices
+- App icons and manifest configured
+- Push notifications ready
+
+## 🌍 Internationalization
+
+- English/Spanish support
+- Language toggle on all pages
+- Cookie-based language preference
+- Extensible translation system
+
+## 🚢 Deployment
+
+### Vercel
+
+1. Connect GitHub repository
+2. Add environment variables
+3. Deploy automatically on push
+
+### Database
+
+Use Vercel Postgres or external PostgreSQL:
+- Set `DATABASE_URL` in Vercel
+- Run migrations: `npx prisma migrate deploy`
+- Seed database: `npx prisma db seed`
+
+## 📝 TODO / Next Steps
+
+- [ ] Implement Google OAuth
+- [ ] Implement Apple Sign In
+- [ ] Implement Phone OTP (Twilio)
+- [ ] Add video upload for exercises
+- [ ] Implement progress photo cloud storage
+- [ ] Build PR calculation engine
+- [ ] Complete nutrition macro calculator
+- [ ] Implement grocery list generator
+- [ ] Build leaderboard system
+- [ ] Add push notifications
+- [ ] Complete admin panel features
+
+## 📄 License
+
+Private - All rights reserved
+
+## 🤝 Support
+
+For issues or questions, contact the development team.

@@ -3,7 +3,7 @@ export type Lang = 'en' | 'es';
 export const translations = {
   landing: {
     en: {
-      title: 'NelyFit',
+      title: 'NelsyFit',
       subtitle: 'Gamified fitness coaching with Duolingo-style programs, badges, streaks, and more.',
       coachTitle: "I'm a Coach",
       coachDesc: 'Manage clients, create programs, and track progress',
@@ -11,15 +11,15 @@ export const translations = {
       clientTitle: "I'm a Client",
       clientDesc: 'Track workouts, earn badges, and build streaks',
       clientLogin: 'Login as Client',
-      demoCoach: 'Demo: coach@nelyfit.demo / demo',
-      demoClient: 'Demo: client@nelyfit.demo / demo',
+      demoCoach: 'Demo: coach@nelsyfit.demo / demo',
+      demoClient: 'Demo: client@nelsyfit.demo / demo',
       gamified: 'Gamified',
       streaks: 'Streaks',
       badges: 'Badges',
       programs: 'Programs',
     },
     es: {
-      title: 'NelyFit',
+      title: 'NelsyFit',
       subtitle: 'Entrenamiento fitness gamificado con programas estilo Duolingo, logros, rachas y más.',
       coachTitle: 'Soy un Entrenador',
       coachDesc: 'Gestiona clientes, crea programas y rastrea el progreso',
@@ -27,8 +27,8 @@ export const translations = {
       clientTitle: 'Soy un Cliente',
       clientDesc: 'Rastrea entrenamientos, gana logros y construye rachas',
       clientLogin: 'Iniciar sesión como Cliente',
-      demoCoach: 'Demo: coach@nelyfit.demo / demo',
-      demoClient: 'Demo: client@nelyfit.demo / demo',
+      demoCoach: 'Demo: coach@nelsyfit.demo / demo',
+      demoClient: 'Demo: client@nelsyfit.demo / demo',
       gamified: 'Gamificado',
       streaks: 'Rachas',
       badges: 'Logros',

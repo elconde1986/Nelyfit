@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { updateGamificationForToday } from '@/lib/gamification';
 
-const DEMO_CLIENT_EMAIL = 'client@nelyfit.demo';
+const DEMO_CLIENT_EMAIL = 'client@nelsyfit.demo';
 
 async function getDemoClient() {
   const client = await prisma.client.findFirst({

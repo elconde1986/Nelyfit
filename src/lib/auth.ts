@@ -37,7 +37,7 @@ export async function getCurrentUser() {
   }
 }
 
-export async function requireAuth(requiredRole?: 'COACH' | 'CLIENT') {
+export async function requireAuth(requiredRole?: 'COACH' | 'CLIENT' | 'ADMIN') {
   const user = await getCurrentUser();
   
   if (!user) {

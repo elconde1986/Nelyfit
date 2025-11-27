@@ -3,13 +3,13 @@ import type { ReactNode } from 'react';
 import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
-  title: 'NelyFit - Gamified Fitness Coaching',
+  title: 'NelsyFit - Gamified Fitness Coaching',
   description: 'Gamified fitness coaching with Duolingo-style programs, badges, streaks, and more',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'NelyFit',
+    title: 'NelsyFit',
   },
   formatDetection: {
     telephone: false,

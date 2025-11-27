@@ -3,8 +3,8 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const coachEmail = 'coach@nelyfit.demo';
-  const clientEmail = 'client@nelyfit.demo';
+  const coachEmail = 'coach@nelsyfit.demo';
+  const clientEmail = 'client@nelsyfit.demo';
 
   const coach = await prisma.user.upsert({
     where: { email: coachEmail },

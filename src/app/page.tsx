@@ -49,15 +49,22 @@ export default async function LandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 relative z-10">
-              <Link href="/login/coach" className="block">
-                <Button className="w-full" size="lg">
-                  {t.coachLogin}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              <div className="space-y-2">
+                <Link href="/login/coach" className="block">
+                  <Button className="w-full" size="lg">
+                    {t.coachLogin}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+                <Link href="/signup" className="block">
+                  <Button variant="ghost" className="w-full" size="sm">
+                    New? Sign Up
+                  </Button>
+                </Link>
+              </div>
               <p className="text-xs text-center text-slate-500">
                 {t.demoCoach}
-              </p>
+            </p>
             </CardContent>
           </Card>
 
@@ -73,15 +80,22 @@ export default async function LandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 relative z-10">
-              <Link href="/login/client" className="block">
-                <Button variant="secondary" className="w-full" size="lg">
-                  {t.clientLogin}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              <div className="space-y-2">
+                <Link href="/login/client" className="block">
+                  <Button variant="secondary" className="w-full" size="lg">
+                    {t.clientLogin}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+                <Link href="/signup" className="block">
+                  <Button variant="ghost" className="w-full" size="sm">
+                    New? Sign Up
+                  </Button>
+                </Link>
+              </div>
               <p className="text-xs text-center text-slate-500">
                 {t.demoClient}
-              </p>
+            </p>
             </CardContent>
           </Card>
         </section>
