@@ -41,6 +41,59 @@ enum WorkoutRole {
   CUSTOM
 }
 
+enum WorkoutGoal {
+  STRENGTH
+  HYPERTROPHY
+  FAT_LOSS
+  GENERAL_FITNESS
+  ENDURANCE
+  MOBILITY
+}
+
+enum WorkoutDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum TrainingEnvironment {
+  GYM
+  HOME
+  BODYWEIGHT
+  OUTDOOR
+}
+
+enum SessionType {
+  STRENGTH
+  CIRCUIT
+  HIIT
+  MOBILITY
+  RECOVERY
+}
+
+enum BlockType {
+  STANDARD_SETS_REPS
+  CIRCUIT
+  AMRAP
+  EMOM
+  HIIT_INTERVAL
+  CUSTOM
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+enum FeelingCode {
+  TOO_EASY
+  GOOD_CHALLENGE
+  HARD
+  FAILED_REPS
+  PAIN
+}
+
 enum AuthProvider {
   EMAIL
   GOOGLE
@@ -120,6 +173,7 @@ model User {
   subscriptions         Subscription[]
   payments              Payment[]
   workoutLogs           WorkoutLog[]
+  workoutSessions       WorkoutSession[]          @relation("WorkoutSessionClient")
   progressPhotos        ProgressPhoto[]
   bodyMeasurements      BodyMeasurement[]
   mealPlans             MealPlan[]
@@ -304,18 +358,99 @@ model Workout {
   program   Program? @relation(fields: [programId], references: [id])
   programId String?
 
+  // New metadata fields
+  goal                WorkoutGoal?
+  difficulty          WorkoutDifficulty?
+  trainingEnvironment TrainingEnvironment?
+  primaryBodyFocus    String?
+  estimatedDuration   Int? // in minutes
+  sessionTypes        SessionType[]
+  tags                String[]
+  visibility          TemplateVisibility   @default(PRIVATE)
+  usageCount          Int                  @default(0)
+
+  sections    WorkoutSection[]
   exercises   Exercise[]
   programDays ProgramDay[]
   logs        WorkoutLog[]
+  sessions    WorkoutSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model WorkoutSection {
+  id        String  @id @default(cuid())
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  workoutId String
+  name      String  @default("Section")
+  order     Int
+  notes     String?
+
+  blocks WorkoutBlock[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workoutId, order])
+}
+
+model WorkoutBlock {
+  id                String         @id @default(cuid())
+  section           WorkoutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sectionId         String
+  type              BlockType
+  title             String?
+  instructions      String?
+  rounds            Int?
+  restBetweenRounds Int? // in seconds
+  estimatedTime     Int? // in seconds
+  order             Int
+
+  exercises WorkoutExercise[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sectionId, order])
+}
+
+model WorkoutExercise {
+  id         String       @id @default(cuid())
+  block      WorkoutBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  blockId    String
+  exercise   Exercise?    @relation(fields: [exerciseId], references: [id])
+  exerciseId String?
+
+  // Custom exercise fields (if not from library)
+  name            String
+  category        String?
+  equipment       String?
+  musclesTargeted String[]
+  notes           String? // Client-facing cues
+  coachNotes      String? // Private coach notes
+
+  // Per-set programming (JSON arrays for flexibility)
+  targetRepsBySet      Json // [8, 8, 8]
+  targetWeightBySet    Json? // [50, 50, 50] or null
+  targetRestBySet      Json? // [60, 60, 90]
+  targetRPEBySet       Json? // [7, 7, 8]
+  loadPrescriptionType String? // "exact", "percent_1rm", "rpe"
+
+  order Int
+
+  setLogs ExerciseSetLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([blockId, order])
+}
+
 model Exercise {
-  id              String  @id @default(cuid())
-  workout         Workout @relation(fields: [workoutId], references: [id])
-  workoutId       String
+  id              String   @id @default(cuid())
+  workout         Workout? @relation(fields: [workoutId], references: [id])
+  workoutId       String?
   name            String
   sets            Int
   reps            Int?
@@ -324,7 +459,15 @@ model Exercise {
   weight          Float? // Default weight
   notes           String?
   videoUrl        String?
-  canSwap         Boolean @default(false) // Allow exercise swap
+  canSwap         Boolean  @default(false) // Allow exercise swap
+
+  // Exercise library fields
+  category          String?
+  equipment         String?
+  musclesTargeted   String[]
+  isLibraryExercise Boolean  @default(false)
+
+  workoutExercises WorkoutExercise[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -341,6 +484,8 @@ model ProgramDay {
   isRestDay Boolean  @default(false)
   notes     String?
 
+  sessions WorkoutSession[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -351,6 +496,62 @@ model ProgramDay {
 // TRACKING
 // ============================================
 
+model WorkoutSession {
+  id           String      @id @default(cuid())
+  client       User        @relation("WorkoutSessionClient", fields: [clientId], references: [id])
+  clientId     String
+  workout      Workout     @relation(fields: [workoutId], references: [id])
+  workoutId    String
+  programDay   ProgramDay? @relation(fields: [programDayId], references: [id])
+  programDayId String?
+
+  dateTimeStarted   DateTime
+  dateTimeCompleted DateTime?
+  status            SessionStatus @default(IN_PROGRESS)
+  clientNotes       String?
+  coachNotes        String?
+
+  setLogs ExerciseSetLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId, dateTimeStarted])
+}
+
+model ExerciseSetLog {
+  id                String          @id @default(cuid())
+  session           WorkoutSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId         String
+  workoutExercise   WorkoutExercise @relation(fields: [workoutExerciseId], references: [id])
+  workoutExerciseId String
+
+  exerciseId   String? // Reference to Exercise library if applicable
+  exerciseName String // Denormalized for display
+  setNumber    Int
+
+  // Prescribed values
+  targetReps   Int
+  targetWeight Float?
+  targetUnit   String @default("kg")
+
+  // Client logged values
+  actualReps   Int?
+  actualWeight Float?
+  actualUnit   String @default("kg")
+
+  // Feeling
+  feelingCode  FeelingCode?
+  feelingEmoji String?
+  feelingNote  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, workoutExerciseId, setNumber])
+}
+
+// Legacy model - kept for backward compatibility
 model WorkoutLog {
   id        String  @id @default(cuid())
   user      User    @relation(fields: [userId], references: [id])

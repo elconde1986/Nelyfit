@@ -76,12 +76,19 @@ export const translations = {
       quickLook: 'Quick look at your clients, streaks and templates.',
       clients: 'Clients',
       onFire: 'On fire',
-      templates: 'Templates',
+      workouts: 'Workouts',
+      workoutLibrary: 'Workout Library',
+      newWorkout: 'New Workout',
+      editWorkout: 'Edit Workout',
+      templates: 'Templates', // Legacy - keep for backward compatibility
       inbox: 'Inbox',
       logout: 'Logout',
-      yourTemplates: 'Your Templates',
-      noTemplates: 'No templates yet in this demo.',
-      useTemplate: 'Use Template',
+      yourTemplates: 'Your Templates', // Legacy
+      yourWorkouts: 'Your Workouts',
+      noTemplates: 'No templates yet in this demo.', // Legacy
+      noWorkouts: 'No workouts yet. Create your first workout!',
+      useTemplate: 'Use Template', // Legacy
+      useWorkout: 'Use Workout',
       weeks: 'weeks',
       visibility: 'visibility',
     },
@@ -91,12 +98,19 @@ export const translations = {
       quickLook: 'Vista rápida de tus clientes, rachas y plantillas.',
       clients: 'Clientes',
       onFire: 'En llamas',
-      templates: 'Plantillas',
+      workouts: 'Entrenamientos',
+      workoutLibrary: 'Biblioteca de Entrenamientos',
+      newWorkout: 'Nuevo Entrenamiento',
+      editWorkout: 'Editar Entrenamiento',
+      templates: 'Plantillas', // Legacy
       inbox: 'Bandeja de entrada',
       logout: 'Cerrar sesión',
-      yourTemplates: 'Tus Plantillas',
-      noTemplates: 'Aún no hay plantillas en esta demo.',
-      useTemplate: 'Usar Plantilla',
+      yourTemplates: 'Tus Plantillas', // Legacy
+      yourWorkouts: 'Tus Entrenamientos',
+      noTemplates: 'Aún no hay plantillas en esta demo.', // Legacy
+      noWorkouts: 'Aún no hay entrenamientos. ¡Crea tu primer entrenamiento!',
+      useTemplate: 'Usar Plantilla', // Legacy
+      useWorkout: 'Usar Entrenamiento',
       weeks: 'semanas',
       visibility: 'visibilidad',
     },

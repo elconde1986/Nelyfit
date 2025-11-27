@@ -36,7 +36,8 @@ export default async function CoachDashboardPage() {
       coachedClients: {
         include: { gamification: true },
       },
-      templates: true,
+      templates: true, // Legacy
+      workouts: true,
     },
   });
 
@@ -78,9 +79,9 @@ export default async function CoachDashboardPage() {
               </Link>
             </Button>
             <Button asChild variant="secondary" size="sm">
-              <Link href="/coach/templates">
+              <Link href="/coach/workouts">
                 <LayoutTemplate className="w-3 h-3 mr-1" />
-                {t.templates}
+                {t.workouts}
               </Link>
             </Button>
             <form action={logout}>
@@ -117,10 +118,10 @@ export default async function CoachDashboardPage() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="w-5 h-5 text-teal-400" />
-                <p className="text-xs text-slate-400 uppercase tracking-wider">{t.templates}</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wider">{t.workouts}</p>
               </div>
               <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                {coach.templates.length}
+                {coach.workouts?.length || 0}
               </p>
             </CardContent>
           </Card>
