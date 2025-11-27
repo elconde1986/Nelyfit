@@ -4,8 +4,10 @@ import { LayoutTemplate, Home, ArrowLeft, FileText, Calendar, Eye, FilePlus } fr
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { translations, Lang } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,22 +33,28 @@ export default async function TemplatesPage() {
     );
   }
 
+  const lang = getLang();
+  const t = translations.coach[lang];
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 safe-top safe-bottom">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        <div className="flex justify-end mb-4">
+          <LanguageToggle currentLang={lang} />
+        </div>
         <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 animate-fade-in">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1.5">
               <LayoutTemplate className="w-5 h-5 text-emerald-400" />
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Templates</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">{t.templates}</p>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-              Program <span className="gradient-text">Marketplace</span>
-              <span className="text-slate-400 text-lg sm:text-xl ml-2">(Demo)</span>
+              {t.yourTemplates}
             </h1>
             <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
-              This is a simplified view showing your templates. Advanced marketplace
-              features can be built on top.
+              {lang === 'en' 
+                ? 'Create and manage your program templates'
+                : 'Crea y gestiona tus plantillas de programas'}
             </p>
           </div>
           <nav className="flex flex-wrap gap-2 shrink-0">
@@ -74,7 +82,7 @@ export default async function TemplatesPage() {
             <Button asChild>
               <Link href="/coach/templates/create">
                 <FilePlus className="w-4 h-4 mr-1" />
-                Create Template
+                {lang === 'en' ? 'Create Template' : 'Crear Plantilla'}
               </Link>
             </Button>
           </div>

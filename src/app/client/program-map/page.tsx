@@ -3,8 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { MapPin, ArrowLeft, Dumbbell, Coffee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { translations, Lang } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +43,8 @@ export default async function ProgramMapPage() {
     );
   }
 
-  const lang = (client.preferredLang as 'en' | 'es') ?? 'en';
+  const lang = getLang();
+  const t = translations.client[lang];
   const program = client.currentProgram;
   const days = program.days;
 
@@ -98,12 +101,15 @@ export default async function ProgramMapPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 safe-top safe-bottom">
       <div className="mx-auto max-w-2xl px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        <div className="flex justify-end mb-4">
+          <LanguageToggle currentLang={lang} />
+        </div>
         <header className="flex items-start justify-between gap-4 animate-fade-in">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <MapPin className="w-4 h-4 text-emerald-400" />
               <p className="text-xs text-slate-400 uppercase tracking-wider">
-                {lang === 'en' ? 'Program map' : 'Mapa del programa'}
+                {t.programMap}
               </p>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-2">
@@ -116,7 +122,7 @@ export default async function ProgramMapPage() {
           <Button asChild variant="secondary" size="sm" className="shrink-0">
             <Link href="/client/today">
               <ArrowLeft className="w-3 h-3 mr-1" />
-              {lang === 'en' ? 'Back' : 'Volver'}
+              {t.back}
             </Link>
           </Button>
         </header>
@@ -137,14 +143,7 @@ export default async function ProgramMapPage() {
                 const isCurrent = n.status === 'current';
                 const isCompleted = n.status === 'completed';
                 const isRest = n.status === 'rest';
-                const label =
-                  lang === 'en'
-                    ? isRest
-                      ? 'Rest'
-                      : `Day ${n.dayIndex}`
-                    : isRest
-                    ? 'Descanso'
-                    : `Día ${n.dayIndex}`;
+                const label = isRest ? t.rest : `${t.day} ${n.dayIndex}`;
 
                 let bg = 'bg-slate-800/60 border-slate-700';
                 let shadow = '';

@@ -161,7 +161,7 @@ export default async function CoachDashboardPage() {
                       </div>
                     </div>
                     <Button asChild variant="secondary" size="sm" className="shrink-0 w-full sm:w-auto">
-                      <Link href="#">
+                      <Link href={`/coach/clients/${c.id}`}>
                         Details
                         <ArrowRight className="w-3 h-3 ml-1" />
                       </Link>
