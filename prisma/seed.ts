@@ -585,6 +585,10 @@ async function main() {
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + 30);
 
+  // Delete existing codes first to avoid conflicts
+  await prisma.temporaryCodeRedemption.deleteMany({});
+  await prisma.temporaryCode.deleteMany({});
+  
   await prisma.temporaryCode.createMany({
     data: [
       {
