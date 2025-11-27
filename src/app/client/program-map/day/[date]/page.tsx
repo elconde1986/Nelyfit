@@ -130,8 +130,8 @@ export default async function DayDetailsPage({
           name: programDay.workout.name,
           description: programDay.workout.description || undefined,
           estimatedDuration: programDay.workout.estimatedDuration || undefined,
-          goal: programDay.workout.goal || undefined,
-          difficulty: programDay.workout.difficulty || undefined,
+          goal: programDay.workout.goal ? String(programDay.workout.goal) : undefined,
+          difficulty: programDay.workout.difficulty ? String(programDay.workout.difficulty) : undefined,
           tags: programDay.workout.tags,
         }
       : null,
