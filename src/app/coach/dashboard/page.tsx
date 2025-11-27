@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { translations, Lang } from '@/lib/i18n';
 import { 
   Users, 
   Flame, 
@@ -42,6 +44,8 @@ export default async function CoachDashboardPage() {
     redirect('/login/coach');
   }
 
+  const lang = getLang();
+  const t = translations.coach[lang];
   const totalClients = coach.coachedClients.length;
   const onFire = coach.coachedClients.filter(
     (c) => c.gamification && c.gamification.streakDays >= 7,
@@ -50,36 +54,39 @@ export default async function CoachDashboardPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 safe-top safe-bottom">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        <div className="flex justify-end mb-4">
+          <LanguageToggle currentLang={lang} />
+        </div>
         <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 animate-fade-in">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1.5">
               <Users className="w-4 h-4 text-emerald-400" />
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Coach view</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">{t.coachView}</p>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-              Welcome back, <span className="gradient-text">{coach.name ?? 'Coach'}</span>
+              {t.welcomeBack} <span className="gradient-text">{coach.name ?? 'Coach'}</span>
             </h1>
             <p className="text-sm sm:text-base text-slate-400">
-              Quick look at your clients, streaks and templates.
+              {t.quickLook}
             </p>
           </div>
           <nav className="flex flex-wrap gap-2 shrink-0">
             <Button asChild variant="secondary" size="sm">
               <Link href="/coach/inbox">
                 <Mail className="w-3 h-3 mr-1" />
-                Inbox
+                {t.inbox}
               </Link>
             </Button>
             <Button asChild variant="secondary" size="sm">
               <Link href="/coach/templates">
                 <LayoutTemplate className="w-3 h-3 mr-1" />
-                Templates
+                {t.templates}
               </Link>
             </Button>
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm">
                 <LogOut className="w-3 h-3 mr-1" />
-                Logout
+                {t.logout}
               </Button>
             </form>
           </nav>
@@ -90,7 +97,7 @@ export default async function CoachDashboardPage() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-5 h-5 text-emerald-400" />
-                <p className="text-xs text-slate-400 uppercase tracking-wider">Clients</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wider">{t.clients}</p>
               </div>
               <p className="text-3xl sm:text-4xl font-bold gradient-text">{totalClients}</p>
             </CardContent>
@@ -99,7 +106,7 @@ export default async function CoachDashboardPage() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-2">
                 <Flame className="w-5 h-5 text-orange-400" />
-                <p className="text-xs text-slate-400 uppercase tracking-wider">On fire</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wider">{t.onFire}</p>
               </div>
               <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
                 {onFire.length}
@@ -110,7 +117,7 @@ export default async function CoachDashboardPage() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="w-5 h-5 text-teal-400" />
-                <p className="text-xs text-slate-400 uppercase tracking-wider">Templates</p>
+                <p className="text-xs text-slate-400 uppercase tracking-wider">{t.templates}</p>
               </div>
               <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
                 {coach.templates.length}
@@ -122,7 +129,7 @@ export default async function CoachDashboardPage() {
         <section className="space-y-3 sm:space-y-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-lg sm:text-xl font-bold">Clients</h2>
+            <h2 className="text-lg sm:text-xl font-bold">{t.clients}</h2>
           </div>
           <Card className="divide-y divide-slate-800">
             {coach.coachedClients.length === 0 ? (
