@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nelyfit-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nelyfit
+      POSTGRES_PASSWORD: nelyfit
+      POSTGRES_DB: nelyfit
+    ports:
+      - "5434:5432"
+    volumes:
+      - nelyfit_pgdata:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nelyfit-app
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+
+volumes:
+  nelyfit_pgdata:

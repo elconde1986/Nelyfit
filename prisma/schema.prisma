@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  COACH
+  CLIENT
+}
+
+enum MessageSender {
+  COACH
+  CLIENT
+}
+
+enum NotificationType {
+  NUDGE
+  GENERAL
+  SYSTEM
+}
+
+enum TemplateVisibility {
+  PRIVATE
+  TEAM
+  PUBLIC
+}
+
+enum WorkoutRole {
+  FULL_BODY
+  UPPER
+  LOWER
+  CARDIO
+  HIIT
+  RECOVERY
+  CORE
+  CUSTOM
+}
+
+model User {
+  id              String          @id @default(cuid())
+  email           String          @unique
+  name            String?
+  role            Role            @default(CLIENT)
+  password        String
+
+  client          Client?         @relation(fields: [clientId], references: [id])
+  clientId        String?
+
+  coachedClients  Client[]        @relation("CoachClients")
+  sentMessages    ChatMessage[]   @relation("CoachMessages")
+  notificationsSent Notification[] @relation("CoachNotifications")
+
+  templates       ProgramTemplate[]
+  teamsOwned      Team[]          @relation("TeamOwner")
+  teamMemberships TeamMember[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Client {
+  id               String                @id @default(cuid())
+  name             String
+  email            String?               @unique
+
+  user             User?                 @relation(fields: [userId], references: [id])
+  userId           String?
+
+  coach            User?                 @relation("CoachClients", fields: [coachId], references: [id])
+  coachId          String?
+
+  currentProgram   Program?              @relation(fields: [currentProgramId], references: [id])
+  currentProgramId String?
+
+  programStartDate DateTime?
+
+  logs             CompletionLog[]
+  gamification     GamificationProfile?
+  preferredLang    String                @default("en")
+
+  messages         ChatMessage[]         @relation("ClientMessages")
+  notes            CoachNote[]
+  notifications    Notification[]
+
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+}
+
+model Program {
+  id        String       @id @default(cuid())
+  name      String
+  goal      String?
+  coach     User?        @relation(fields: [coachId], references: [id])
+  coachId   String?
+
+  workouts  Workout[]
+  days      ProgramDay[]
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Workout {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  coach       User?      @relation(fields: [coachId], references: [id])
+  coachId     String?
+
+  program     Program?   @relation(fields: [programId], references: [id])
+  programId   String?
+
+  exercises   Exercise[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Exercise {
+  id              String   @id @default(cuid())
+  workout         Workout  @relation(fields: [workoutId], references: [id])
+  workoutId       String
+  name            String
+  sets            Int
+  reps            Int?
+  durationSeconds Int?
+  restSeconds     Int?
+  notes           String?
+}
+
+model ProgramDay {
+  id          String   @id @default(cuid())
+  program     Program  @relation(fields: [programId], references: [id])
+  programId   String
+  dayIndex    Int
+  title       String
+  workout     Workout? @relation(fields: [workoutId], references: [id])
+  workoutId   String?
+  isRestDay   Boolean  @default(false)
+  notes       String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([programId, dayIndex])
+}
+
+model CompletionLog {
+  id               String   @id @default(cuid())
+  client           Client   @relation(fields: [clientId], references: [id])
+  clientId         String
+  date             DateTime
+  workoutCompleted Boolean  @default(false)
+  habitsCompleted  String[] @db.Text
+
+  createdAt        DateTime @default(now())
+
+  @@index([clientId, date])
+}
+
+model GamificationProfile {
+  id             String   @id @default(cuid())
+  client         Client   @relation(fields: [clientId], references: [id])
+  clientId       String   @unique
+  xp             Int      @default(0)
+  level          Int      @default(1)
+  streakDays     Int      @default(0)
+  bestStreak     Int      @default(0)
+  lastActiveDate DateTime?
+  totalWorkouts  Int      @default(0)
+  totalHabits    Int      @default(0)
+  badges         String[] @db.Text
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String        @id @default(cuid())
+  coach     User          @relation("CoachMessages", fields: [coachId], references: [id])
+  coachId   String
+  client    Client        @relation("ClientMessages", fields: [clientId], references: [id])
+  clientId  String
+  sender    MessageSender
+  content   String
+  readAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([clientId, createdAt])
+}
+
+model CoachNote {
+  id           String   @id @default(cuid())
+  coach        User     @relation(fields: [coachId], references: [id])
+  coachId      String
+  client       Client   @relation(fields: [clientId], references: [id])
+  clientId     String
+  message      String
+  autoSuggested Boolean @default(false)
+  resolved     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  client    Client           @relation(fields: [clientId], references: [id])
+  clientId  String
+  coach     User?            @relation("CoachNotifications", fields: [coachId], references: [id])
+  coachId   String?
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+}
+
+model ProgramTemplate {
+  id          String             @id @default(cuid())
+  name        String
+  description String?
+  goal        String?
+  weeks       Int
+  visibility  TemplateVisibility @default(PRIVATE)
+
+  owner       User               @relation(fields: [ownerId], references: [id])
+  ownerId     String
+
+  team        Team?              @relation(fields: [teamId], references: [id])
+  teamId      String?
+
+  tags        String[]
+  slug        String?            @unique
+
+  days        ProgramTemplateDay[]
+
+  useCount    Int                @default(0)
+
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model ProgramTemplateDay {
+  id          String           @id @default(cuid())
+  template    ProgramTemplate  @relation(fields: [templateId], references: [id])
+  templateId  String
+  dayIndex    Int
+  title       String
+  workoutRole WorkoutRole
+  isRestDay   Boolean          @default(false)
+  notes       String?
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([templateId, dayIndex])
+}
+
+model Team {
+  id               String           @id @default(cuid())
+  name             String
+  owner            User             @relation("TeamOwner", fields: [ownerId], references: [id])
+  ownerId          String
+  members          TeamMember[]
+  programTemplates ProgramTemplate[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  team      Team     @relation(fields: [teamId], references: [id])
+  teamId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  role      String   @default("COACH")
+  createdAt DateTime @default(now())
+}
