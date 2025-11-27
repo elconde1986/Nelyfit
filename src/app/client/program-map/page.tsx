@@ -85,36 +85,36 @@ export default async function ProgramMapPage() {
   });
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto max-w-md px-4 py-6 space-y-6">
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 uppercase mb-1">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 safe-top safe-bottom">
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        <header className="flex items-start justify-between gap-4 animate-fade-in">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-slate-400 uppercase mb-1.5 tracking-wider">
               {lang === 'en' ? 'Program map' : 'Mapa del programa'}
             </p>
-            <h1 className="text-xl font-semibold tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-2">
               {program.name}
             </h1>
             {program.goal && (
-              <p className="text-sm text-slate-300">{program.goal}</p>
+              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">{program.goal}</p>
             )}
           </div>
           <Link
             href="/client/today"
-            className="text-xs border border-slate-700 rounded-lg px-3 py-1 hover:border-emerald-400"
+            className="btn-secondary text-xs sm:text-sm shrink-0"
           >
             {lang === 'en' ? 'Back' : 'Volver'}
           </Link>
         </header>
 
-        <p className="text-sm text-slate-400">
+        <p className="text-sm sm:text-base text-slate-400 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {lang === 'en'
             ? 'Each circle is a program day. Today is highlighted.'
             : 'Cada círculo es un día del programa. Hoy está resaltado.'}
         </p>
 
-        <section className="relative rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="grid grid-cols-3 gap-6">
+        <section className="card relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-6">
             {nodes.map((n, idx) => {
               const row = Math.floor(idx / 3);
               const col = idx % 3;
@@ -131,24 +131,31 @@ export default async function ProgramMapPage() {
                   ? 'Descanso'
                   : `Día ${n.dayIndex}`;
 
-              let bg = 'bg-slate-800 border-slate-700';
-              if (isCurrent) bg = 'bg-emerald-500 border-emerald-400';
-              else if (isCompleted) bg = 'bg-emerald-500/20 border-emerald-400';
-              else if (isRest) bg = 'bg-slate-800/70 border-sky-400';
+              let bg = 'bg-slate-800/60 border-slate-700';
+              let shadow = '';
+              if (isCurrent) {
+                bg = 'bg-gradient-to-br from-emerald-500 to-teal-500 border-emerald-400';
+                shadow = 'shadow-lg shadow-emerald-500/30 scale-110';
+              } else if (isCompleted) {
+                bg = 'bg-gradient-to-br from-emerald-500/30 to-emerald-500/20 border-emerald-400/60';
+                shadow = 'shadow-md shadow-emerald-500/10';
+              } else if (isRest) {
+                bg = 'bg-slate-800/50 border-sky-400/40';
+              }
 
               return (
                 <div
                   key={n.id}
-                  className={`flex flex-col items-center justify-center gap-1 col-start-${offset + 1}`}
+                  className={`flex flex-col items-center justify-center gap-2 col-start-${offset + 1} transition-transform duration-200 ${isCurrent ? 'z-10' : ''}`}
                 >
                   <div
-                    className={`h-14 w-14 rounded-full border flex items-center justify-center text-xs font-semibold ${bg}`}
+                    className={`h-16 w-16 sm:h-20 sm:w-20 rounded-full border-2 flex items-center justify-center text-lg sm:text-xl font-semibold transition-all duration-200 ${bg} ${shadow}`}
                   >
                     {isRest ? '😌' : '💪'}
                   </div>
-                  <p className="text-xs text-slate-200">{label}</p>
+                  <p className="text-xs sm:text-sm font-semibold text-slate-200">{label}</p>
                   {n.title && (
-                    <p className="text-[10px] text-slate-400 text-center line-clamp-2">
+                    <p className="text-[10px] sm:text-xs text-slate-400 text-center line-clamp-2 max-w-[80px] sm:max-w-[100px]">
                       {n.title}
                     </p>
                   )}

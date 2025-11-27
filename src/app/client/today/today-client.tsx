@@ -166,44 +166,50 @@ export default function ClientTodayClient(props: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50 relative overflow-hidden">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 relative overflow-hidden safe-top safe-bottom">
       {showConfetti && (
         <ReactConfetti width={width} height={height} numberOfPieces={200} recycle={false} />
       )}
 
-      <div className="mx-auto max-w-md px-4 py-6 space-y-6">
+      <div className="mx-auto max-w-md px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Language toggle */}
         <div className="flex justify-end mb-2">
-          <button
-            className={`text-xs px-2 py-1 rounded-l-lg border border-slate-700 ${
-              lang === 'en' ? 'bg-slate-800' : ''
-            }`}
-            onClick={() => setLang('en')}
-          >
-            EN
-          </button>
-          <button
-            className={`text-xs px-2 py-1 rounded-r-lg border border-slate-700 border-l-0 ${
-              lang === 'es' ? 'bg-slate-800' : ''
-            }`}
-            onClick={() => setLang('es')}
-          >
-            ES
-          </button>
+          <div className="inline-flex rounded-xl border border-slate-800 bg-slate-900/60 p-1">
+            <button
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                lang === 'en'
+                  ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              onClick={() => setLang('en')}
+            >
+              EN
+            </button>
+            <button
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                lang === 'es'
+                  ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              onClick={() => setLang('es')}
+            >
+              ES
+            </button>
+          </div>
         </div>
 
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-400 uppercase mb-1">{t.clientView}</p>
-            <h1 className="text-xl font-semibold tracking-tight">
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-slate-400 uppercase mb-1.5 tracking-wider">{t.clientView}</p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
               {lang === 'en'
-                ? `Hi ${clientName.split(' ')[0]}, here’s your day`
+                ? `Hi ${clientName.split(' ')[0]}, here's your day`
                 : `Hola ${clientName.split(' ')[0]}, este es tu día`}
             </h1>
           </div>
           <Link
             href="/"
-            className="text-xs border border-slate-700 rounded-lg px-3 py-1 hover:border-emerald-400"
+            className="btn-secondary text-xs shrink-0"
           >
             {t.back}
           </Link>
@@ -211,57 +217,67 @@ export default function ClientTodayClient(props: Props) {
 
         {/* Notifications */}
         {notifications && notifications.length > 0 && (
-          <section className="space-y-2">
+          <section className="space-y-2 animate-slide-in">
             {notifications.map((n) => (
               <div
                 key={n.id}
-                className="rounded-xl border border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-50"
+                className="rounded-xl border border-emerald-500/60 bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 px-4 py-3 text-xs sm:text-sm text-emerald-50 shadow-lg shadow-emerald-500/10"
               >
-                <p className="font-semibold">{n.title}</p>
-                <p>{n.body}</p>
+                <p className="font-bold mb-1">{n.title}</p>
+                <p className="text-emerald-100/90">{n.body}</p>
               </div>
             ))}
           </section>
         )}
 
         {/* Gamification header */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-400 uppercase mb-1">{t.levelLabel}</p>
-              <p className="text-2xl font-semibold">Lv. {gamification.level}</p>
+        <section className="card relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 opacity-50" />
+          <div className="relative space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs text-slate-400 uppercase mb-1.5 tracking-wider">{t.levelLabel}</p>
+                <p className="text-3xl sm:text-4xl font-bold gradient-text">Lv. {gamification.level}</p>
+              </div>
+              <div className="text-right space-y-1">
+                <div className="flex items-center gap-1.5 justify-end">
+                  <span className="text-lg">🔥</span>
+                  <p className="text-xs sm:text-sm font-semibold text-slate-200">
+                    {gamification.streakDays}
+                  </p>
+                </div>
+                <p className="text-xs text-slate-400">
+                  {t.xpToNext(remainingXp)}
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-400">
-                {t.streak(gamification.streakDays)}
-              </p>
-              <p className="text-xs text-slate-400">
-                {t.xpToNext(remainingXp)}
-              </p>
+            <div className="w-full h-2.5 rounded-full bg-slate-800/80 overflow-hidden shadow-inner">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500 ease-out shadow-lg shadow-emerald-500/30"
+                style={{ width: `${Math.min(100, (gamification.xp % 100))}%` }}
+              />
             </div>
-          </div>
-          <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-            <div
-              className="h-full bg-emerald-500"
-              style={{ width: `${Math.min(100, (gamification.xp % 100))}%` }}
-            />
           </div>
         </section>
 
         {badgePopup && (
-          <section className="rounded-xl border border-yellow-400/60 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-100 space-y-1">
-            <p className="font-semibold">{t.badgeUnlocked}</p>
+          <section className="rounded-xl border border-yellow-400/60 bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 px-4 py-3 text-xs sm:text-sm text-yellow-50 space-y-2 shadow-lg shadow-yellow-500/20 animate-fade-in">
+            <p className="font-bold text-yellow-100">{t.badgeUnlocked} 🏆</p>
             {badgePopup.map((b) => (
-              <p key={b.id}>
-                {lang === 'en' ? b.nameEn : b.nameEs} –{' '}
-                {lang === 'en' ? b.descriptionEn : b.descriptionEs}
-              </p>
+              <div key={b.id} className="space-y-1">
+                <p className="font-semibold text-yellow-100">
+                  {lang === 'en' ? b.nameEn : b.nameEs}
+                </p>
+                <p className="text-yellow-200/90">
+                  {lang === 'en' ? b.descriptionEn : b.descriptionEs}
+                </p>
+              </div>
             ))}
           </section>
         )}
 
         {flashMessage && (
-          <section className="rounded-xl border border-emerald-400/60 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
+          <section className="rounded-xl border border-emerald-400/60 bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 px-4 py-3 text-xs sm:text-sm text-emerald-50 shadow-lg shadow-emerald-500/20 animate-fade-in">
             {flashMessage}
           </section>
         )}
@@ -274,31 +290,37 @@ export default function ClientTodayClient(props: Props) {
         )}
 
         {/* Workout */}
-        <section className="space-y-2">
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">{t.todaysWorkout}</h2>
+            <h2 className="text-sm sm:text-base font-bold">{t.todaysWorkout}</h2>
             <Link
               href="/client/program-map"
-              className="text-[11px] text-emerald-400 hover:underline"
+              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
             >
-              {lang === 'en' ? 'Program map' : 'Mapa del programa'}
+              {lang === 'en' ? 'Program map' : 'Mapa del programa'} →
             </Link>
           </div>
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm">
+          <div className="card space-y-3">
             {!workout ? (
-              <p className="text-slate-300">{t.noWorkout}</p>
+              <p className="text-slate-300 text-sm sm:text-base py-2">{t.noWorkout}</p>
             ) : (
               <>
-                <p className="font-medium">{workout.name}</p>
-                {workout.description && (
-                  <p className="text-xs text-slate-300 mt-1">
-                    {workout.description}
-                  </p>
-                )}
-                <ul className="mt-2 space-y-1 text-xs text-slate-300">
+                <div>
+                  <p className="font-bold text-base sm:text-lg mb-1">{workout.name}</p>
+                  {workout.description && (
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                      {workout.description}
+                    </p>
+                  )}
+                </div>
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-300">
                   {workout.exercises?.map((ex: any) => (
-                    <li key={ex.id}>
-                      • {ex.name} – {ex.sets}x{ex.reps ?? '?'}
+                    <li key={ex.id} className="flex items-center gap-2">
+                      <span className="text-emerald-400">•</span>
+                      <span className="flex-1">{ex.name}</span>
+                      <span className="text-slate-400 font-medium">
+                        {ex.sets}x{ex.reps ?? '?'}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -310,7 +332,7 @@ export default function ClientTodayClient(props: Props) {
                       handleGamificationResponse(res, 'workout');
                     })
                   }
-                  className="mt-3 inline-flex items-center rounded-lg bg-emerald-500 text-slate-950 px-4 py-2 text-xs font-medium hover:bg-emerald-400 disabled:opacity-60"
+                  className="btn-primary w-full text-sm sm:text-base"
                 >
                   {lang === 'en' ? 'Mark workout done' : 'Marcar entrenamiento hecho'}
                 </button>
@@ -320,9 +342,9 @@ export default function ClientTodayClient(props: Props) {
         </section>
 
         {/* Habits */}
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold">{t.todaysHabits}</h2>
-          <div className="space-y-2">
+        <section className="space-y-3">
+          <h2 className="text-sm sm:text-base font-bold">{t.todaysHabits}</h2>
+          <div className="space-y-2.5">
             {habits.map((h) => {
               const done = log?.habitsCompleted?.includes(h.id);
               return (
@@ -335,13 +357,18 @@ export default function ClientTodayClient(props: Props) {
                       handleGamificationResponse(res, 'habit');
                     })
                   }
-                  className={`w-full text-left rounded-2xl border px-4 py-2 text-xs ${
+                  className={`w-full text-left rounded-xl border px-4 py-3.5 text-xs sm:text-sm font-medium transition-all duration-200 ${
                     done
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-50'
-                      : 'border-slate-800 bg-slate-900/60 text-slate-200'
-                  }`}
+                      ? 'border-emerald-500 bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 text-emerald-50 shadow-lg shadow-emerald-500/10'
+                      : 'border-slate-800 bg-slate-900/60 text-slate-200 hover:border-slate-700 hover:bg-slate-900/80 active:scale-[0.98]'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {lang === 'en' ? h.labelEn : h.labelEs}
+                  <div className="flex items-center gap-2">
+                    <span className={`text-lg ${done ? 'opacity-100' : 'opacity-40'}`}>
+                      {done ? '✓' : '○'}
+                    </span>
+                    <span>{lang === 'en' ? h.labelEn : h.labelEs}</span>
+                  </div>
                 </button>
               );
             })}
