@@ -9,6 +9,24 @@ type Measurement = {
   [key: string]: any;
 };
 
+function convertUnit(
+  value: number | null | undefined,
+  from: 'metric' | 'imperial',
+  to: 'metric' | 'imperial',
+  metricType: string
+) {
+  if (!value) return 0;
+  if (from === to) return value;
+  if (from === 'metric' && to === 'imperial') {
+    // cm to inches for measurements, kg to lbs for weight
+    return metricType === 'weight' ? value * 2.20462 : value * 0.393701;
+  }
+  if (from === 'imperial' && to === 'metric') {
+    return metricType === 'weight' ? value * 0.453592 : value * 2.54;
+  }
+  return value;
+}
+
 export function MeasurementsChart({
   measurements,
   metric,
@@ -32,22 +50,9 @@ export function MeasurementsChart({
           month: 'short',
           day: 'numeric',
         }),
-        value: convertUnit((m as any)[metric], 'metric', unit),
+        value: convertUnit((m as any)[metric], 'metric', unit, metric),
       }));
   }, [measurements, metric, unit, lang]);
-
-  const convertUnit = (value: number | null | undefined, from: 'metric' | 'imperial', to: 'metric' | 'imperial') => {
-    if (!value) return 0;
-    if (from === to) return value;
-    if (from === 'metric' && to === 'imperial') {
-      // cm to inches for measurements, kg to lbs for weight
-      return metric === 'weight' ? value * 2.20462 : value * 0.393701;
-    }
-    if (from === 'imperial' && to === 'metric') {
-      return metric === 'weight' ? value * 0.453592 : value * 2.54;
-    }
-    return value;
-  };
 
   const maxValue = Math.max(...chartData.map(d => d.value), 0);
   const minValue = Math.min(...chartData.map(d => d.value), 0);
