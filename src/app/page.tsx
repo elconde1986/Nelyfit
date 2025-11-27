@@ -38,8 +38,8 @@ export default async function LandingPage() {
         {/* Login Options */}
         <section className="grid gap-6 sm:gap-8 md:grid-cols-2 max-w-4xl mx-auto mb-16 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <Card className="group relative overflow-hidden border-emerald-500/30 hover:border-emerald-500/60 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-500/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <CardHeader className="text-center pb-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <CardHeader className="text-center pb-4 relative z-10">
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
                 <User className="w-8 h-8 text-white" strokeWidth={2.5} />
               </div>
@@ -48,7 +48,7 @@ export default async function LandingPage() {
                 {t.coachDesc}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 relative z-10">
               <Button asChild className="w-full" size="lg">
                 <Link href="/login/coach">
                   {t.coachLogin}
@@ -62,8 +62,8 @@ export default async function LandingPage() {
           </Card>
 
           <Card className="group relative overflow-hidden border-teal-500/30 hover:border-teal-500/60 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <CardHeader className="text-center pb-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 via-teal-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <CardHeader className="text-center pb-4 relative z-10">
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/30">
                 <Users className="w-8 h-8 text-white" strokeWidth={2.5} />
               </div>
@@ -72,7 +72,7 @@ export default async function LandingPage() {
                 {t.clientDesc}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 relative z-10">
               <Button asChild variant="secondary" className="w-full" size="lg">
                 <Link href="/login/client">
                   {t.clientLogin}
