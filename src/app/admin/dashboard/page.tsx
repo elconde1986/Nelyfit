@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Users, DollarSign, TrendingUp } from 'lucide-react';
+import { Shield, Users, DollarSign, TrendingUp, Key, Dumbbell, Settings } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -92,14 +92,20 @@ export default async function AdminDashboardPage() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Link href="/admin/codes" className="block p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+              <Link href="/admin/codes" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Key className="w-4 h-4" />
                 Create Temporary Code
+              </Link>
+              <Link href="/admin/workouts" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Dumbbell className="w-4 h-4" />
+                Workout Library Management
+              </Link>
+              <Link href="/admin/settings" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Settings className="w-4 h-4" />
+                System Settings
               </Link>
               <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
                 Manage Users (Coming Soon)
-              </div>
-              <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
-                View Subscriptions (Coming Soon)
               </div>
             </CardContent>
           </Card>

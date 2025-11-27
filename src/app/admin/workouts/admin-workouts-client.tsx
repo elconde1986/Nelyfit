@@ -16,6 +16,8 @@ import {
   Settings,
   Tag,
   Plus,
+  Star,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,12 +81,20 @@ export default function AdminWorkoutsClient({
                 : 'Gestiona todos los entrenamientos, plantillas y gobernanza de contenido'}
             </p>
           </div>
-          <Button asChild>
-            <Link href="/admin/workouts/create">
-              <Plus className="w-4 h-4 mr-2" />
-              {lang === 'en' ? 'Create Global Workout' : 'Crear Entrenamiento Global'}
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="secondary">
+              <Link href="/admin/workouts/tags">
+                <Tag className="w-4 h-4 mr-2" />
+                {lang === 'en' ? 'Manage Tags' : 'Gestionar Etiquetas'}
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/admin/workouts/create">
+                <Plus className="w-4 h-4 mr-2" />
+                {lang === 'en' ? 'Create Global Workout' : 'Crear Entrenamiento Global'}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Analytics Cards */}
@@ -334,6 +344,14 @@ export default function AdminWorkoutsClient({
                             <Link href={`/coach/workouts/${workout.id}?mode=edit`}>
                               <Edit className="w-3 h-3" />
                             </Link>
+                          </Button>
+                          {workout.visibility === 'PUBLIC' && (
+                            <Button variant="ghost" size="sm" title={lang === 'en' ? 'Feature template' : 'Destacar plantilla'}>
+                              <Star className="w-3 h-3" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="sm" title={lang === 'en' ? 'Deprecate' : 'Deprecar'}>
+                            <XCircle className="w-3 h-3" />
                           </Button>
                         </div>
                       </td>
