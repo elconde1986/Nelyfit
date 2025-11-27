@@ -1,177 +1,712 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const coachEmail = 'coach@nelsyfit.demo';
-  const clientEmail = 'client@nelsyfit.demo';
+  console.log('🌱 Starting comprehensive seed...');
 
-  const coach = await prisma.user.upsert({
-    where: { email: coachEmail },
+  // Hash password for all users
+  const hashedPassword = await bcrypt.hash('demo', 10);
+
+  // ============================================
+  // CREATE ADMIN USER
+  // ============================================
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@nelsyfit.demo' },
     update: {},
     create: {
-      email: coachEmail,
+      email: 'admin@nelsyfit.demo',
+      name: 'Admin User',
+      role: 'ADMIN',
+      password: hashedPassword,
+      authProvider: 'EMAIL',
+      emailVerified: true,
+    },
+  });
+  console.log('✅ Admin user created');
+
+  // ============================================
+  // CREATE COACHES
+  // ============================================
+  const coach1 = await prisma.user.upsert({
+    where: { email: 'coach@nelsyfit.demo' },
+    update: {},
+    create: {
+      email: 'coach@nelsyfit.demo',
       name: 'Demo Coach',
       role: 'COACH',
-      password: 'demo',
+      password: hashedPassword,
+      authProvider: 'EMAIL',
+      emailVerified: true,
     },
   });
 
-  const client = await prisma.client.upsert({
-    where: { email: clientEmail },
+  const coach2 = await prisma.user.upsert({
+    where: { email: 'coach2@nelsyfit.demo' },
     update: {},
     create: {
+      email: 'coach2@nelsyfit.demo',
+      name: 'Sarah Johnson',
+      role: 'COACH',
+      password: hashedPassword,
+      authProvider: 'EMAIL',
+      emailVerified: true,
+    },
+  });
+  console.log('✅ Coaches created');
+
+  // ============================================
+  // CREATE CLIENTS WITH PROFILES
+  // ============================================
+  const clientsData = [
+    {
+      email: 'client@nelsyfit.demo',
       name: 'Demo Client',
-      email: clientEmail,
       preferredLang: 'en',
+      streakDays: 7,
+      level: 5,
+      xp: 1250,
+      totalWorkouts: 12,
+      totalHabits: 45,
+      badges: ['7_day_streak', '10_workouts'],
     },
-  });
+    {
+      email: 'client2@nelsyfit.demo',
+      name: 'Maria Garcia',
+      preferredLang: 'es',
+      streakDays: 3,
+      level: 2,
+      xp: 350,
+      totalWorkouts: 5,
+      totalHabits: 18,
+      badges: [],
+    },
+    {
+      email: 'client3@nelsyfit.demo',
+      name: 'John Smith',
+      preferredLang: 'en',
+      streakDays: 14,
+      level: 8,
+      xp: 3200,
+      totalWorkouts: 28,
+      totalHabits: 98,
+      badges: ['7_day_streak', '10_workouts', '100_habits'],
+    },
+    {
+      email: 'client4@nelsyfit.demo',
+      name: 'Emma Wilson',
+      preferredLang: 'en',
+      streakDays: 1,
+      level: 1,
+      xp: 50,
+      totalWorkouts: 1,
+      totalHabits: 3,
+      badges: [],
+    },
+  ];
 
-  await prisma.user.upsert({
-    where: { email: clientEmail },
-    update: {},
-    create: {
-      email: clientEmail,
-      name: 'Demo Client',
-      role: 'CLIENT',
-      password: 'demo',
-      client: {
-        connect: { id: client.id },
+  const createdClients = [];
+  for (const clientData of clientsData) {
+    const client = await prisma.client.upsert({
+      where: { email: clientData.email },
+      update: {},
+      create: {
+        name: clientData.name,
+        email: clientData.email,
+        preferredLang: clientData.preferredLang,
+        coachId: coach1.id,
+        gamification: {
+          create: {
+            xp: clientData.xp,
+            level: clientData.level,
+            streakDays: clientData.streakDays,
+            bestStreak: clientData.streakDays,
+            totalWorkouts: clientData.totalWorkouts,
+            totalHabits: clientData.totalHabits,
+            badges: clientData.badges,
+            lastActiveDate: new Date(),
+          },
+        },
       },
-    },
-  });
+    });
 
-  // link coach to client
-  await prisma.client.update({
-    where: { id: client.id },
-    data: {
-      coachId: coach.id,
-    },
-  });
+    const user = await prisma.user.upsert({
+      where: { email: clientData.email },
+      update: {},
+      create: {
+        email: clientData.email,
+        name: clientData.name,
+        role: 'CLIENT',
+        password: hashedPassword,
+        authProvider: 'EMAIL',
+        emailVerified: true,
+        clientId: client.id,
+        profile: {
+          create: {
+            height: 170 + Math.floor(Math.random() * 30),
+            weight: 60 + Math.floor(Math.random() * 30),
+            fitnessGoal: ['Weight Loss', 'Muscle Gain', 'General Fitness', 'Endurance'][Math.floor(Math.random() * 4)],
+            experienceLevel: ['Beginner', 'Intermediate', 'Advanced'][Math.floor(Math.random() * 3)],
+          },
+        },
+      },
+    });
 
-  // create workouts
-  const fullBody = await prisma.workout.create({
-    data: {
+    await prisma.client.update({
+      where: { id: client.id },
+      data: { userId: user.id },
+    });
+
+    createdClients.push({ client, user });
+  }
+  console.log('✅ Clients created with profiles');
+
+  // ============================================
+  // CREATE WORKOUTS
+  // ============================================
+  const workouts = [
+    {
       name: 'Full Body Intro',
-      description: 'Simple full body strength session.',
-      coachId: coach.id,
-      exercises: {
-        create: [
-          { name: 'Squats', sets: 3, reps: 10 },
-          { name: 'Push-ups', sets: 3, reps: 8 },
-          { name: 'Rows', sets: 3, reps: 10 },
-        ],
-      },
+      description: 'Simple full body strength session for beginners.',
+      exercises: [
+        { name: 'Squats', sets: 3, reps: 10, restSeconds: 60 },
+        { name: 'Push-ups', sets: 3, reps: 8, restSeconds: 45 },
+        { name: 'Rows', sets: 3, reps: 10, restSeconds: 60 },
+        { name: 'Plank', sets: 3, durationSeconds: 30, restSeconds: 30 },
+      ],
     },
-  });
-
-  const upper = await prisma.workout.create({
-    data: {
+    {
       name: 'Upper Body Focus',
-      description: 'Push & pull focus.',
-      coachId: coach.id,
-      exercises: {
-        create: [
-          { name: 'Bench press', sets: 3, reps: 8 },
-          { name: 'Pull-ups', sets: 3, reps: 6 },
-        ],
-      },
+      description: 'Push & pull focus for upper body strength.',
+      exercises: [
+        { name: 'Bench Press', sets: 4, reps: 8, weight: 60, restSeconds: 90 },
+        { name: 'Pull-ups', sets: 3, reps: 6, restSeconds: 90 },
+        { name: 'Shoulder Press', sets: 3, reps: 10, weight: 20, restSeconds: 60 },
+        { name: 'Bicep Curls', sets: 3, reps: 12, weight: 15, restSeconds: 45 },
+      ],
     },
-  });
-
-  const lower = await prisma.workout.create({
-    data: {
+    {
       name: 'Lower Body Focus',
-      description: 'Leg day basics.',
-      coachId: coach.id,
-      exercises: {
-        create: [
-          { name: 'Deadlifts', sets: 3, reps: 5 },
-          { name: 'Lunges', sets: 3, reps: 8 },
-        ],
-      },
+      description: 'Leg day basics for lower body strength.',
+      exercises: [
+        { name: 'Deadlifts', sets: 4, reps: 5, weight: 80, restSeconds: 120 },
+        { name: 'Lunges', sets: 3, reps: 12, restSeconds: 60 },
+        { name: 'Leg Press', sets: 3, reps: 15, weight: 100, restSeconds: 90 },
+        { name: 'Calf Raises', sets: 3, reps: 20, restSeconds: 30 },
+      ],
     },
-  });
+    {
+      name: 'Cardio Blast',
+      description: 'High-intensity cardio workout.',
+      exercises: [
+        { name: 'Burpees', sets: 3, reps: 10, restSeconds: 60 },
+        { name: 'Jumping Jacks', sets: 3, durationSeconds: 45, restSeconds: 30 },
+        { name: 'Mountain Climbers', sets: 3, durationSeconds: 30, restSeconds: 30 },
+        { name: 'High Knees', sets: 3, durationSeconds: 30, restSeconds: 30 },
+      ],
+    },
+    {
+      name: 'Core Strength',
+      description: 'Focus on core stability and strength.',
+      exercises: [
+        { name: 'Plank', sets: 3, durationSeconds: 60, restSeconds: 30 },
+        { name: 'Russian Twists', sets: 3, reps: 20, restSeconds: 30 },
+        { name: 'Leg Raises', sets: 3, reps: 15, restSeconds: 30 },
+        { name: 'Bicycle Crunches', sets: 3, reps: 20, restSeconds: 30 },
+      ],
+    },
+  ];
 
-  // create program
+  const createdWorkouts = [];
+  for (const workoutData of workouts) {
+    const workout = await prisma.workout.create({
+      data: {
+        name: workoutData.name,
+        description: workoutData.description,
+        coachId: coach1.id,
+        exercises: {
+          create: workoutData.exercises.map((ex: any) => ({
+            name: ex.name,
+            sets: ex.sets,
+            reps: ex.reps || null,
+            durationSeconds: ex.durationSeconds || null,
+            restSeconds: ex.restSeconds || 60,
+            weight: ex.weight || null,
+            canSwap: true,
+          })),
+        },
+      },
+    });
+    createdWorkouts.push(workout);
+  }
+  console.log('✅ Workouts created');
+
+  // ============================================
+  // CREATE PROGRAMS
+  // ============================================
   const program = await prisma.program.create({
     data: {
-      name: '4-week General Fitness',
+      name: '4-Week General Fitness',
       goal: '3x/week strength with lifestyle habits.',
-      coachId: coach.id,
+      coachId: coach1.id,
+      weeks: {
+        create: [
+          { weekNumber: 1, title: 'Foundation Week', notes: 'Focus on form and consistency' },
+          { weekNumber: 2, title: 'Building Strength', notes: 'Increase intensity gradually' },
+          { weekNumber: 3, title: 'Progressive Overload', notes: 'Challenge yourself more' },
+          { weekNumber: 4, title: 'Peak Performance', notes: 'Push your limits' },
+        ],
+      },
     },
   });
 
-  // attach workouts to program days (first week demo)
-  await prisma.programDay.createMany({
+  // Create program days (4 weeks = 28 days)
+  const programDays = [];
+  let dayIndex = 1;
+  for (let week = 1; week <= 4; week++) {
+    // Week structure: Mon, Wed, Fri workouts, rest days in between
+    const workoutDays = [1, 3, 5]; // Monday, Wednesday, Friday
+    const workoutTypes = ['Full Body Intro', 'Upper Body Focus', 'Lower Body Focus'];
+    
+    for (let day = 1; day <= 7; day++) {
+      const isWorkoutDay = workoutDays.includes(day);
+      const workoutIndex = workoutDays.indexOf(day);
+      
+      programDays.push({
+        programId: program.id,
+        dayIndex: dayIndex++,
+        title: isWorkoutDay 
+          ? `Day ${dayIndex - 1}: ${workoutTypes[workoutIndex % workoutTypes.length]}`
+          : `Day ${dayIndex - 1}: Recovery`,
+        workoutId: isWorkoutDay 
+          ? createdWorkouts[workoutIndex % createdWorkouts.length].id 
+          : null,
+        isRestDay: !isWorkoutDay,
+        notes: isWorkoutDay ? 'Focus on form and breathing' : 'Light movement, stretching, or complete rest',
+      });
+    }
+  }
+
+  await prisma.programDay.createMany({ data: programDays });
+  console.log('✅ Program created with 28 days');
+
+  // Assign program to first client
+  await prisma.client.update({
+    where: { id: createdClients[0].client.id },
+    data: {
+      currentProgramId: program.id,
+      programStartDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Started 7 days ago
+    },
+  });
+
+  // ============================================
+  // CREATE COMPLETION LOGS
+  // ============================================
+  const mainClient = createdClients[0].client;
+  const today = new Date();
+  
+  // Create completion logs for last 7 days
+  for (let i = 6; i >= 0; i--) {
+    const logDate = new Date(today);
+    logDate.setDate(logDate.getDate() - i);
+    
+    await prisma.completionLog.upsert({
+      where: {
+        id: `log-${mainClient.id}-${logDate.toISOString().split('T')[0]}`,
+      },
+      update: {},
+      create: {
+        clientId: mainClient.id,
+        date: logDate,
+        workoutCompleted: i % 2 === 0, // Every other day
+        habitsCompleted: i % 2 === 0 
+          ? ['water', 'steps', 'sleep']
+          : ['water', 'steps'],
+      },
+    });
+  }
+  console.log('✅ Completion logs created');
+
+  // ============================================
+  // CREATE CHAT MESSAGES
+  // ============================================
+  const messages = [
+    { sender: 'COACH', content: 'Welcome to NelsyFit! Ready to start your fitness journey? 💪' },
+    { sender: 'CLIENT', content: 'Yes! Excited to get started!' },
+    { sender: 'COACH', content: 'Great! Remember to focus on form over speed. You got this! 🔥' },
+    { sender: 'CLIENT', content: 'Thanks for the encouragement!' },
+    { sender: 'COACH', content: 'I noticed you completed 7 days in a row - amazing streak! Keep it up! 🎉' },
+  ];
+
+  for (const msg of messages) {
+    await prisma.chatMessage.create({
+      data: {
+        coachId: coach1.id,
+        clientId: mainClient.id,
+        sender: msg.sender as any,
+        content: msg.content,
+        readAt: msg.sender === 'COACH' ? null : new Date(),
+        createdAt: new Date(Date.now() - (messages.length - messages.indexOf(msg)) * 60 * 60 * 1000),
+      },
+    });
+  }
+  console.log('✅ Chat messages created');
+
+  // ============================================
+  // CREATE NOTIFICATIONS
+  // ============================================
+  await prisma.notification.createMany({
     data: [
       {
-        programId: program.id,
-        dayIndex: 1,
-        title: 'Full Body Kickoff',
-        workoutId: fullBody.id,
-        isRestDay: false,
+        clientId: mainClient.id,
+        coachId: coach1.id,
+        type: 'GENERAL',
+        title: 'Welcome to NelsyFit!',
+        body: 'Your fitness journey starts today. Complete your first workout to earn XP!',
       },
       {
-        programId: program.id,
-        dayIndex: 3,
-        title: 'Upper Strength',
-        workoutId: upper.id,
-        isRestDay: false,
+        clientId: mainClient.id,
+        coachId: coach1.id,
+        type: 'NUDGE',
+        title: 'Keep your streak going! 🔥',
+        body: 'You have a 7-day streak! Complete today\'s workout to make it 8 days!',
       },
       {
-        programId: program.id,
-        dayIndex: 5,
-        title: 'Lower Strength',
-        workoutId: lower.id,
-        isRestDay: false,
-      },
-      {
-        programId: program.id,
-        dayIndex: 2,
-        title: 'Recovery / light movement',
-        workoutId: null,
-        isRestDay: true,
-      },
-      {
-        programId: program.id,
-        dayIndex: 4,
-        title: 'Recovery / light movement',
-        workoutId: null,
-        isRestDay: true,
-      },
-      {
-        programId: program.id,
-        dayIndex: 6,
-        title: 'Recovery / light movement',
-        workoutId: null,
-        isRestDay: true,
-      },
-      {
-        programId: program.id,
-        dayIndex: 7,
-        title: 'Recovery / light movement',
-        workoutId: null,
-        isRestDay: true,
+        clientId: mainClient.id,
+        type: 'SYSTEM',
+        title: 'Level Up! 🎉',
+        body: 'Congratulations! You reached Level 5!',
       },
     ],
   });
+  console.log('✅ Notifications created');
 
-  // assign program to client starting today
-  await prisma.client.update({
-    where: { id: client.id },
+  // ============================================
+  // CREATE PROGRAM TEMPLATES
+  // ============================================
+  const templates = [
+    {
+      name: 'Beginner Strength Program',
+      description: 'Perfect for those new to strength training',
+      goal: 'Build foundational strength',
+      weeks: 4,
+      visibility: 'PUBLIC',
+      tags: ['beginner', 'strength', 'full-body'],
+    },
+    {
+      name: 'Advanced Powerlifting',
+      description: 'For experienced lifters looking to increase max strength',
+      goal: 'Increase 1RM on big lifts',
+      weeks: 12,
+      visibility: 'TEAM',
+      tags: ['advanced', 'powerlifting', 'strength'],
+    },
+    {
+      name: 'Fat Loss Circuit',
+      description: 'High-intensity circuit training for fat loss',
+      goal: 'Burn fat and build lean muscle',
+      weeks: 6,
+      visibility: 'PRIVATE',
+      tags: ['fat-loss', 'cardio', 'hiit'],
+    },
+  ];
+
+  for (const templateData of templates) {
+    const template = await prisma.programTemplate.create({
+      data: {
+        ...templateData,
+        ownerId: coach1.id,
+        visibility: templateData.visibility as any,
+        days: {
+          create: Array.from({ length: templateData.weeks * 7 }, (_, i) => ({
+            dayIndex: i + 1,
+            title: `Day ${i + 1}`,
+            workoutRole: i % 3 === 0 ? 'RECOVERY' : 'FULL_BODY',
+            isRestDay: i % 3 === 0,
+          })),
+        },
+      },
+    });
+  }
+  console.log('✅ Program templates created');
+
+  // ============================================
+  // CREATE TEMPORARY ACCESS CODES
+  // ============================================
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + 30);
+
+  await prisma.temporaryCode.createMany({
+    data: [
+      {
+        code: 'TRIAL2024',
+        type: 'TRIAL_CODE',
+        expiresAt: futureDate,
+        maxUses: 100,
+        assignedTier: 'PREMIUM_MONTHLY',
+        trialDays: 7,
+        createdById: admin.id,
+      },
+      {
+        code: 'COACH2024',
+        type: 'COACH_INVITE',
+        expiresAt: futureDate,
+        maxUses: 50,
+        assignedTier: 'PREMIUM_MONTHLY',
+        createdById: admin.id,
+      },
+      {
+        code: 'CORP2024',
+        type: 'CORPORATE_WELLNESS',
+        expiresAt: futureDate,
+        maxUses: 200,
+        assignedTier: 'PREMIUM_ANNUAL',
+        trialDays: 14,
+        createdById: admin.id,
+      },
+    ],
+  });
+  console.log('✅ Temporary access codes created');
+
+  // ============================================
+  // CREATE SUBSCRIPTIONS & PAYMENTS
+  // ============================================
+  // Create active subscription for client 3
+  const premiumClient = createdClients[2];
+  const subscription = await prisma.subscription.create({
     data: {
-      currentProgramId: program.id,
-      programStartDate: new Date(),
+      userId: premiumClient.user.id,
+      tier: 'PREMIUM_MONTHLY',
+      status: 'ACTIVE',
+      stripeSubscriptionId: 'sub_test_123',
+      stripePriceId: 'price_monthly',
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      payments: {
+        create: [
+          {
+            userId: premiumClient.user.id,
+            amount: 2999,
+            currency: 'usd',
+            status: 'SUCCEEDED',
+            stripePaymentIntentId: 'pi_test_123',
+            stripeInvoiceId: 'in_test_123',
+          },
+        ],
+      },
     },
   });
 
-  console.log('Seed completed.');
+  await prisma.user.update({
+    where: { id: premiumClient.user.id },
+    data: {
+      subscriptionTier: 'PREMIUM_MONTHLY',
+      subscriptionStatus: 'ACTIVE',
+      stripeCustomerId: 'cus_test_123',
+      stripeSubscriptionId: subscription.id,
+    },
+  });
+  console.log('✅ Subscriptions and payments created');
+
+  // ============================================
+  // CREATE WORKOUT LOGS
+  // ============================================
+  for (let i = 0; i < 5; i++) {
+    const logDate = new Date();
+    logDate.setDate(logDate.getDate() - i);
+    
+    await prisma.workoutLog.create({
+      data: {
+        userId: createdClients[0].user.id,
+        workoutId: createdWorkouts[i % createdWorkouts.length].id,
+        date: logDate,
+        completed: true,
+        duration: 1800 + Math.floor(Math.random() * 600), // 30-40 minutes
+        notes: 'Great session!',
+        exerciseLogs: {
+          create: [
+            {
+              exerciseName: 'Squats',
+              sets: 3,
+              reps: 10,
+              weight: 60,
+              restSeconds: 60,
+            },
+            {
+              exerciseName: 'Push-ups',
+              sets: 3,
+              reps: 8,
+              restSeconds: 45,
+            },
+          ],
+        },
+      },
+    });
+  }
+  console.log('✅ Workout logs created');
+
+  // ============================================
+  // CREATE BODY MEASUREMENTS
+  // ============================================
+  for (let i = 0; i < 3; i++) {
+    const measureDate = new Date();
+    measureDate.setDate(measureDate.getDate() - (i * 7));
+    
+    await prisma.bodyMeasurement.create({
+      data: {
+        userId: createdClients[0].user.id,
+        date: measureDate,
+        weight: 70 - (i * 0.5),
+        bodyFat: 20 - (i * 0.3),
+        muscleMass: 50 + (i * 0.2),
+        chest: 100 + (i * 1),
+        waist: 85 - (i * 0.5),
+        hips: 95,
+        arms: 30 + (i * 0.2),
+        thighs: 55 + (i * 0.3),
+      },
+    });
+  }
+  console.log('✅ Body measurements created');
+
+  // ============================================
+  // CREATE MEAL PLANS
+  // ============================================
+  const mealPlan = await prisma.mealPlan.create({
+    data: {
+      userId: createdClients[0].user.id,
+      name: 'Balanced Nutrition Plan',
+      calories: 2000,
+      protein: 150,
+      carbs: 200,
+      fats: 65,
+      fiber: 30,
+      startDate: new Date(),
+      meals: {
+        create: [
+          {
+            name: 'Oatmeal with Berries',
+            mealType: 'breakfast',
+            calories: 400,
+            protein: 15,
+            carbs: 60,
+            fats: 10,
+            ingredients: ['oats', 'blueberries', 'almond milk', 'honey'],
+          },
+          {
+            name: 'Grilled Chicken Salad',
+            mealType: 'lunch',
+            calories: 500,
+            protein: 40,
+            carbs: 30,
+            fats: 20,
+            ingredients: ['chicken breast', 'mixed greens', 'olive oil', 'vegetables'],
+          },
+          {
+            name: 'Salmon with Quinoa',
+            mealType: 'dinner',
+            calories: 600,
+            protein: 45,
+            carbs: 50,
+            fats: 25,
+            ingredients: ['salmon', 'quinoa', 'broccoli', 'lemon'],
+          },
+        ],
+      },
+    },
+  });
+  console.log('✅ Meal plans created');
+
+  // ============================================
+  // CREATE COMMUNITY GROUPS
+  // ============================================
+  const group = await prisma.group.create({
+    data: {
+      name: 'NelsyFit Community',
+      description: 'Join our community of fitness enthusiasts!',
+      isPublic: true,
+      members: {
+        create: [
+          {
+            userId: createdClients[0].user.id,
+            role: 'admin',
+          },
+          {
+            userId: createdClients[1].user.id,
+            role: 'member',
+          },
+        ],
+      },
+      challenges: {
+        create: [
+          {
+            name: '30-Day Challenge',
+            description: 'Complete 30 workouts in 30 days!',
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            goal: 'Complete 30 workouts',
+            participants: {
+              create: [
+                {
+                  userId: createdClients[0].user.id,
+                  progress: 12,
+                  rank: 1,
+                },
+                {
+                  userId: createdClients[1].user.id,
+                  progress: 5,
+                  rank: 2,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
+  console.log('✅ Community groups and challenges created');
+
+  // ============================================
+  // CREATE COACH NOTES
+  // ============================================
+  await prisma.coachNote.createMany({
+    data: [
+      {
+        coachId: coach1.id,
+        clientId: mainClient.id,
+        message: 'Client showing great progress. Consider increasing workout intensity next week.',
+        autoSuggested: false,
+        resolved: false,
+      },
+      {
+        coachId: coach1.id,
+        clientId: mainClient.id,
+        message: '7-day streak achieved! Send encouragement message.',
+        autoSuggested: true,
+        resolved: true,
+      },
+    ],
+  });
+  console.log('✅ Coach notes created');
+
+  console.log('\n🎉 Comprehensive seed completed successfully!');
+  console.log('\n📋 Test Accounts:');
+  console.log('  Admin: admin@nelsyfit.demo / demo');
+  console.log('  Coach: coach@nelsyfit.demo / demo');
+  console.log('  Client 1: client@nelsyfit.demo / demo (7-day streak, Level 5)');
+  console.log('  Client 2: client2@nelsyfit.demo / demo (Spanish, 3-day streak)');
+  console.log('  Client 3: client3@nelsyfit.demo / demo (14-day streak, Premium)');
+  console.log('  Client 4: client4@nelsyfit.demo / demo (New user)');
+  console.log('\n🔑 Access Codes:');
+  console.log('  TRIAL2024 - 7-day trial code');
+  console.log('  COACH2024 - Coach invite code');
+  console.log('  CORP2024 - Corporate wellness code');
 }
 
 main()
   .then(() => prisma.$disconnect())
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Seed error:', e);
     return prisma.$disconnect().finally(() => process.exit(1));
   });

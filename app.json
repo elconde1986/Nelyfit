@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "NelsyFit",
+    "slug": "nelsyfit",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/icons/icon-512x512.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./public/icons/icon-512x512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nelsyfit.app",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "NelsyFit needs access to your health data to track your fitness progress.",
+        "NSHealthUpdateUsageDescription": "NelsyFit needs access to update your health data with workout information."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/icons/icon-512x512.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.nelsyfit.app",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "web": {
+      "favicon": "./public/icons/icon-192x192.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "scheme": "nelsyfit",
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
+  }
+}
+
