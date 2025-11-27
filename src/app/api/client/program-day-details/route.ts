@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       // Check if completed
       const session = await prisma.workoutSession.findFirst({
         where: {
-          clientId: user.clientId,
+          clientId: user.id, // WorkoutSession.clientId references User.id, not Client.id
           programDayId: programDay.id,
           status: 'COMPLETED',
           dateTimeStarted: {
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
     // Get workout session for this day
     const session = await prisma.workoutSession.findFirst({
       where: {
-        clientId: user.clientId,
+        clientId: user.id, // WorkoutSession.clientId references User.id, not Client.id
         programDayId: programDay.id,
         dateTimeStarted: {
           gte: targetDate,

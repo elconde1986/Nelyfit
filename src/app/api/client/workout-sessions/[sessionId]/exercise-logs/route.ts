@@ -22,7 +22,8 @@ export async function PATCH(
       where: { id: sessionId },
     });
 
-    if (!session || session.clientId !== user.clientId) {
+    if (!session || session.clientId !== user.id) {
+      // WorkoutSession.clientId references User.id, not Client.id
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 

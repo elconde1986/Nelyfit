@@ -24,9 +24,10 @@ export async function startWorkoutSession(data: {
     }
 
     // Create workout session
+    // Note: WorkoutSession.clientId references User.id, not Client.id
     const session = await prisma.workoutSession.create({
       data: {
-        clientId: data.clientId,
+        clientId: user.id, // Use user.id, not data.clientId (WorkoutSession.clientId references User.id)
         workoutId: data.workoutId,
         programDayId: data.programDayId,
         dateTimeStarted: new Date(),

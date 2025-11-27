@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     // Check if session already exists for this date
     const existingSession = await prisma.workoutSession.findFirst({
       where: {
-        clientId: user.clientId,
+        clientId: user.id, // Use user.id, not user.clientId (WorkoutSession.clientId references User.id)
         workoutId: programDay.workoutId,
         programDayId: programDay.id,
         dateTimeStarted: {
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     // Create new workout session
     const session = await prisma.workoutSession.create({
       data: {
-        clientId: user.clientId,
+        clientId: user.id, // Use user.id, not user.clientId (WorkoutSession.clientId references User.id)
         workoutId: programDay.workoutId,
         programDayId: programDay.id,
         dateTimeStarted: new Date(),
