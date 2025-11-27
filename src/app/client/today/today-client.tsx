@@ -191,7 +191,7 @@ export default function ClientTodayClient(props: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 relative overflow-hidden safe-top safe-bottom">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 relative overflow-hidden safe-top pb-20">
       {showConfetti && (
         <ReactConfetti width={width} height={height} numberOfPieces={200} recycle={false} />
       )}
@@ -225,7 +225,7 @@ export default function ClientTodayClient(props: Props) {
           </div>
         </div>
 
-        <header className="flex items-start justify-between gap-4">
+        <header className="flex items-start justify-between gap-4 mb-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <Target className="w-4 h-4 text-emerald-400" />
@@ -238,45 +238,12 @@ export default function ClientTodayClient(props: Props) {
             </h1>
           </div>
           <div className="flex gap-2 shrink-0">
-            <Button asChild variant="secondary" size="sm">
-              <Link href="/client/chat">
-                <MessageSquare className="w-3 h-3 mr-1" />
-                {lang === 'en' ? 'Chat' : 'Chat'}
-              </Link>
-            </Button>
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm">
                 <LogOut className="w-3 h-3 mr-1" />
-                Logout
+                {lang === 'en' ? 'Logout' : 'Salir'}
               </Button>
             </form>
-          </div>
-          <div className="flex flex-wrap gap-2 mt-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/billing">
-                {lang === 'en' ? 'Billing' : 'Facturación'}
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/community/groups">
-                {lang === 'en' ? 'Groups' : 'Grupos'}
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/nutrition/meal-plans">
-                {lang === 'en' ? 'Meal Plans' : 'Planes de Comida'}
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/tracking/weight-logs">
-                {lang === 'en' ? 'Weight Logs' : 'Registro de Peso'}
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/training/programs">
-                {lang === 'en' ? 'Programs' : 'Programas'}
-              </Link>
-            </Button>
           </div>
         </header>
 

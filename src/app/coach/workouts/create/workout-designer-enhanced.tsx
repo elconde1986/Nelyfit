@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { translations, Lang } from '@/lib/i18n';
 import { createWorkout } from './actions';
+import { updateWorkoutStructure } from '../[workoutId]/update-actions';
 import ExerciseLibraryPanel from './exercise-library-panel';
 import WorkoutBuilderPanel from './workout-builder-panel';
 import ExerciseConfigPanel from './exercise-config-panel';
@@ -89,46 +90,83 @@ type WorkoutSection = {
   exercises: WorkoutExercise[];
 };
 
-export default function WorkoutDesignerEnhanced({ coachId, lang }: { coachId: string; lang: Lang }) {
+export default function WorkoutDesignerEnhanced({ 
+  coachId, 
+  lang,
+  workoutId,
+  initialData,
+  mode = 'create'
+}: { 
+  coachId: string; 
+  lang: Lang;
+  workoutId?: string;
+  initialData?: any;
+  mode?: 'create' | 'edit';
+}) {
   const router = useRouter();
   const t = translations.coach[lang] || translations.coach.en;
   const [saving, setSaving] = useState(false);
 
   // Workout metadata
-  const [workoutName, setWorkoutName] = useState('');
-  const [tagline, setTagline] = useState('');
-  const [description, setDescription] = useState('');
-  const [workoutType, setWorkoutType] = useState('');
-  const [difficulty, setDifficulty] = useState('');
-  const [goalTags, setGoalTags] = useState<string[]>([]);
-  const [contextTags, setContextTags] = useState<string[]>([]);
-  const [estimatedDuration, setEstimatedDuration] = useState(30);
-  const [visibility, setVisibility] = useState<'PRIVATE' | 'TEAM' | 'PUBLIC'>('PRIVATE');
+  const [workoutName, setWorkoutName] = useState(initialData?.name || '');
+  const [tagline, setTagline] = useState(initialData?.description || '');
+  const [description, setDescription] = useState(initialData?.description || '');
+  const [workoutType, setWorkoutType] = useState(initialData?.primaryBodyFocus || '');
+  const [difficulty, setDifficulty] = useState(initialData?.difficulty || '');
+  const [goalTags, setGoalTags] = useState<string[]>(initialData?.tags?.filter((t: string) => ['STRENGTH', 'HYPERTROPHY', 'ENDURANCE', 'FAT_LOSS', 'MOBILITY'].includes(t)) || []);
+  const [contextTags, setContextTags] = useState<string[]>(initialData?.tags?.filter((t: string) => !['STRENGTH', 'HYPERTROPHY', 'ENDURANCE', 'FAT_LOSS', 'MOBILITY'].includes(t)) || []);
+  const [estimatedDuration, setEstimatedDuration] = useState(initialData?.estimatedDuration || 30);
+  const [visibility, setVisibility] = useState<'PRIVATE' | 'TEAM' | 'PUBLIC'>((initialData?.visibility as any) || 'PRIVATE');
 
   // Workout structure
-  const [sections, setSections] = useState<WorkoutSection[]>([
-    {
-      id: 'warmup',
-      name: lang === 'en' ? 'Warm-up' : 'Calentamiento',
-      type: 'WARMUP',
-      order: 0,
-      exercises: [],
-    },
-    {
-      id: 'main',
-      name: lang === 'en' ? 'Main Workout' : 'Entrenamiento Principal',
-      type: 'MAIN',
-      order: 1,
-      exercises: [],
-    },
-    {
-      id: 'finisher',
-      name: lang === 'en' ? 'Finisher' : 'Finalización',
-      type: 'FINISHER',
-      order: 2,
-      exercises: [],
-    },
-  ]);
+  const [sections, setSections] = useState<WorkoutSection[]>(
+    initialData?.sections?.map((s: any) => ({
+      id: s.id || `section-${Date.now()}`,
+      name: s.name,
+      type: s.name.toLowerCase().includes('warm') ? 'WARMUP' : s.name.toLowerCase().includes('finish') ? 'FINISHER' : 'MAIN',
+      order: s.order,
+      notes: s.notes,
+      exercises: s.blocks?.[0]?.exercises?.map((e: any) => ({
+        id: e.id || `ex-${Date.now()}`,
+        exerciseId: e.exerciseId,
+        name: e.name,
+        category: e.category,
+        equipment: e.equipment,
+        musclesTargeted: e.musclesTargeted || [],
+        notes: e.notes,
+        coachNotes: e.coachNotes,
+        sets: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet.length : 3,
+        reps: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet[0] : 10,
+        restSeconds: Array.isArray(e.targetRestBySet) ? e.targetRestBySet[0] : 60,
+        targetRepsBySet: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet : [10, 10, 10],
+        targetWeightBySet: Array.isArray(e.targetWeightBySet) ? e.targetWeightBySet : [null, null, null],
+        targetRestBySet: Array.isArray(e.targetRestBySet) ? e.targetRestBySet : [60, 60, 60],
+        order: e.order,
+      })) || [],
+    })) || [
+      {
+        id: 'warmup',
+        name: lang === 'en' ? 'Warm-up' : 'Calentamiento',
+        type: 'WARMUP',
+        order: 0,
+        exercises: [],
+      },
+      {
+        id: 'main',
+        name: lang === 'en' ? 'Main Workout' : 'Entrenamiento Principal',
+        type: 'MAIN',
+        order: 1,
+        exercises: [],
+      },
+      {
+        id: 'finisher',
+        name: lang === 'en' ? 'Finisher' : 'Finalización',
+        type: 'FINISHER',
+        order: 2,
+        exercises: [],
+      },
+    ]
+  );
 
   // Exercise Library state
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -292,7 +330,7 @@ export default function WorkoutDesignerEnhanced({ coachId, lang }: { coachId: st
 
     setSaving(true);
     try {
-      const result = await createWorkout({
+      const workoutData = {
         name: workoutName,
         description: tagline || description,
         goal: goalTags[0] || undefined,
@@ -304,14 +342,18 @@ export default function WorkoutDesignerEnhanced({ coachId, lang }: { coachId: st
         tags: [...goalTags, ...contextTags],
         visibility,
         sections: sections.map(s => ({
+          id: s.id,
           name: s.name,
           order: s.order,
           notes: s.notes,
           blocks: [{
+            id: `block-${s.id}`,
             type: 'STANDARD_SETS_REPS',
             title: '',
             order: 0,
             exercises: s.exercises.map(e => ({
+              id: e.id,
+              exerciseId: e.exerciseId,
               name: e.name,
               category: e.category,
               equipment: e.equipment,
@@ -324,12 +366,22 @@ export default function WorkoutDesignerEnhanced({ coachId, lang }: { coachId: st
             })),
           }],
         })),
-      });
+      };
 
-      if (result.success) {
-        router.push(`/coach/workouts/${result.workoutId}`);
+      if (mode === 'edit' && workoutId) {
+        const result = await updateWorkoutStructure(workoutId, workoutData);
+        if (result.success) {
+          router.push(`/coach/workouts/${workoutId}`);
+        } else {
+          alert(result.error || (lang === 'en' ? 'Failed to update workout' : 'Error al actualizar entrenamiento'));
+        }
       } else {
-        alert(result.error || (lang === 'en' ? 'Failed to save workout' : 'Error al guardar entrenamiento'));
+        const result = await createWorkout(workoutData);
+        if (result.success) {
+          router.push(`/coach/workouts/${result.workoutId}`);
+        } else {
+          alert(result.error || (lang === 'en' ? 'Failed to save workout' : 'Error al guardar entrenamiento'));
+        }
       }
     } catch (error) {
       console.error('Error saving workout:', error);

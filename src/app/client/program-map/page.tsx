@@ -100,7 +100,7 @@ export default async function ProgramMapPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 safe-top safe-bottom">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 safe-top pb-20">
       <div className="mx-auto max-w-2xl px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
         <div className="flex justify-end mb-4">
           <LanguageToggle currentLang={lang} />
