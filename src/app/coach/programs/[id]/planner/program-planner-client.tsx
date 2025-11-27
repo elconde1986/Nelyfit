@@ -14,12 +14,14 @@ import {
   Clock,
   Settings,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { translations, Lang } from '@/lib/i18n';
 import { updateProgramStructure, assignWorkoutToDay } from './actions';
+import AutoGenerateModal from './auto-generate';
 
 type ProgramDay = {
   id?: string;
@@ -74,6 +76,7 @@ export default function ProgramPlannerClient({
   );
   const [selectedWorkout, setSelectedWorkout] = useState<string | null>(null);
   const [showWorkoutLibrary, setShowWorkoutLibrary] = useState(false);
+  const [showAutoGenerate, setShowAutoGenerate] = useState(false);
 
   const dayNames = lang === 'en' 
     ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -162,6 +165,13 @@ export default function ProgramPlannerClient({
           <div className="flex gap-2">
             <Button
               variant="secondary"
+              onClick={() => setShowAutoGenerate(true)}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {lang === 'en' ? 'Auto-Generate' : 'Generar Automáticamente'}
+            </Button>
+            <Button
+              variant="secondary"
               onClick={() => setShowWorkoutLibrary(!showWorkoutLibrary)}
             >
               <Dumbbell className="w-4 h-4 mr-2" />
@@ -220,6 +230,21 @@ export default function ProgramPlannerClient({
                                 ? 'border-yellow-500/50 bg-yellow-500/10'
                                 : 'border-slate-700 bg-slate-900/60'
                             }`}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.add('border-blue-500/50', 'bg-blue-500/10');
+                            }}
+                            onDragLeave={(e) => {
+                              e.currentTarget.classList.remove('border-blue-500/50', 'bg-blue-500/10');
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.remove('border-blue-500/50', 'bg-blue-500/10');
+                              const workoutId = e.dataTransfer.getData('workoutId');
+                              if (workoutId) {
+                                handleAssignWorkout(weekIndex, dayIndex, workoutId);
+                              }
+                            }}
                           >
                             <div className="text-xs font-semibold text-slate-400 mb-1">
                               {dayName}
@@ -305,31 +330,39 @@ export default function ProgramPlannerClient({
                 <CardContent className="max-h-[calc(100vh-200px)] overflow-y-auto">
                   <div className="space-y-2">
                     {workouts.map((workout) => (
-                      <div
-                        key={workout.id}
-                        className="p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 cursor-pointer border border-slate-700"
-                        onClick={() => {
-                          if (selectedWorkout) {
-                            const [weekIdx, dayIdx] = selectedWorkout.split('-').map(Number);
-                            handleAssignWorkout(weekIdx, dayIdx + 1, workout.id);
-                            setSelectedWorkout(null);
-                          }
-                        }}
-                      >
-                        <div className="font-semibold text-sm mb-1">{workout.name}</div>
-                        <div className="flex flex-wrap gap-1">
-                          {workout.estimatedDuration && (
-                            <Badge variant="secondary" className="text-xs">
-                              {workout.estimatedDuration}m
-                            </Badge>
-                          )}
-                          {workout.difficulty && (
-                            <Badge variant="outline" className="text-xs">
-                              {workout.difficulty}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
+                  <div
+                    key={workout.id}
+                    className="p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 cursor-move border border-slate-700"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('workoutId', workout.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onClick={() => {
+                      if (selectedWorkout) {
+                        const [weekIdx, dayIdx] = selectedWorkout.split('-').map(Number);
+                        handleAssignWorkout(weekIdx, dayIdx + 1, workout.id);
+                        setSelectedWorkout(null);
+                      }
+                    }}
+                  >
+                    <div className="font-semibold text-sm mb-1 flex items-center gap-2">
+                      <GripVertical className="w-3 h-3 text-slate-400" />
+                      {workout.name}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {workout.estimatedDuration && (
+                        <Badge variant="secondary" className="text-xs">
+                          {workout.estimatedDuration}m
+                        </Badge>
+                      )}
+                      {workout.difficulty && (
+                        <Badge variant="outline" className="text-xs">
+                          {workout.difficulty}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                     ))}
                   </div>
                 </CardContent>
@@ -337,6 +370,24 @@ export default function ProgramPlannerClient({
             </div>
           )}
         </div>
+
+        {/* Auto-Generate Modal */}
+        {showAutoGenerate && (
+          <AutoGenerateModal
+            onGenerate={async (template) => {
+              // This would call an API to auto-generate workouts based on template
+              // For now, we'll just show a message
+              alert(
+                lang === 'en'
+                  ? `Auto-generation will fill program with ${template.daysPerWeek} workouts per week using ${template.pattern.join(', ')} pattern`
+                  : `La generación automática llenará el programa con ${template.daysPerWeek} entrenamientos por semana usando el patrón ${template.pattern.join(', ')}`
+              );
+              setShowAutoGenerate(false);
+            }}
+            onClose={() => setShowAutoGenerate(false)}
+            lang={lang}
+          />
+        )}
       </div>
     </main>
   );

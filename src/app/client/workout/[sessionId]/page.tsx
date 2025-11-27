@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
-import WorkoutExecutionClient from './workout-execution-client';
+import WorkoutExecutionEnhanced from './workout-execution-enhanced';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +19,11 @@ export default async function WorkoutExecutionPage({
 
   const lang = getLang();
 
+  const client = await prisma.client.findUnique({
+    where: { id: user.clientId },
+    select: { coachId: true },
+  });
+
   const session = await prisma.workoutSession.findUnique({
     where: { id: params.sessionId },
     include: {
@@ -30,6 +35,22 @@ export default async function WorkoutExecutionPage({
                 include: {
                   exercises: {
                     orderBy: { order: 'asc' },
+                    include: {
+                      exercise: {
+                        include: {
+                          coachVideos: client?.coachId
+                            ? {
+                                where: {
+                                  coachId: client.coachId,
+                                  status: 'ACTIVE',
+                                },
+                                orderBy: [{ isPrimary: 'desc' }, { createdAt: 'desc' }],
+                                take: 1,
+                              }
+                            : false,
+                        },
+                      },
+                    },
                   },
                 },
                 orderBy: { order: 'asc' },
@@ -50,7 +71,7 @@ export default async function WorkoutExecutionPage({
   }
 
   return (
-    <WorkoutExecutionClient
+    <WorkoutExecutionEnhanced
       session={session}
       clientId={user.clientId}
       lang={lang}

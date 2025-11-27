@@ -105,11 +105,19 @@ export async function completeSession(sessionId: string) {
   try {
     const session = await prisma.workoutSession.findUnique({
       where: { id: sessionId },
+      include: {
+        setLogs: true,
+      },
     });
 
     if (!session || session.clientId !== user.clientId) {
       return { success: false, error: 'Unauthorized' };
     }
+
+    // Calculate duration
+    const duration = session.dateTimeStarted
+      ? Math.floor((new Date().getTime() - session.dateTimeStarted.getTime()) / 1000)
+      : 0;
 
     await prisma.workoutSession.update({
       where: { id: sessionId },
@@ -119,7 +127,47 @@ export async function completeSession(sessionId: string) {
       },
     });
 
-    return { success: true };
+    // Update gamification (XP, streak, badges)
+    const client = await prisma.client.findUnique({
+      where: { id: user.clientId },
+      include: { gamification: true },
+    });
+
+    if (client) {
+      const baseXP = 50;
+      const setsCompleted = session.setLogs.length;
+      const bonusXP = setsCompleted * 5;
+      const totalXP = baseXP + bonusXP;
+
+      // Update or create gamification profile
+      if (client.gamification) {
+        await prisma.gamificationProfile.update({
+          where: { id: client.gamification.id },
+          data: {
+            xp: { increment: totalXP },
+            streakDays: { increment: 1 },
+            lastActiveDate: new Date(),
+            totalWorkouts: { increment: 1 },
+          },
+        });
+      } else {
+        await prisma.gamificationProfile.create({
+          data: {
+            clientId: client.id,
+            xp: totalXP,
+            level: 1,
+            streakDays: 1,
+            lastActiveDate: new Date(),
+            totalWorkouts: 1,
+          },
+        });
+      }
+
+      // Check for badge unlocks (simplified - in real app, this would be more sophisticated)
+      // This is a placeholder - actual badge logic would check various criteria
+    }
+
+    return { success: true, xpGained: 50 };
   } catch (error: any) {
     console.error('Error completing session:', error);
     return { success: false, error: error.message || 'Failed to complete session' };

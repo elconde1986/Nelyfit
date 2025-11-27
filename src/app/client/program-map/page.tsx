@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { MapPin, ArrowLeft, Dumbbell, Coffee } from 'lucide-react';
+import { MapPin, ArrowLeft, Dumbbell, Coffee, CheckCircle2, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { translations, Lang } from '@/lib/i18n';
+import ProgramMapEnhanced from './program-map-enhanced';
 
 export const dynamic = 'force-dynamic';
 
