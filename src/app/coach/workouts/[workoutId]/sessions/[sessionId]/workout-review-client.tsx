@@ -67,7 +67,7 @@ export default function WorkoutReviewClient({
               <span className="gradient-text">{session.workout.name}</span>
             </h1>
             <p className="text-slate-400 text-sm mt-1">
-              {session.client.user.name} • {new Date(session.dateTimeStarted).toLocaleDateString()}
+              {session.client?.user?.name || session.client?.name || 'Client'} • {new Date(session.dateTimeStarted).toLocaleDateString()}
             </p>
           </div>
           <Button asChild variant="secondary" size="sm">

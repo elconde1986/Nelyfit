@@ -23,7 +23,11 @@ export default async function WorkoutReviewPage({
     where: { id: params.sessionId },
     include: {
       client: {
-        include: { user: true },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true },
+          },
+        },
       },
       workout: {
         include: {
