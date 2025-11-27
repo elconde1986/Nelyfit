@@ -57,18 +57,13 @@ export default async function ProgramPlannerPage({
   }
 
   // Get coach's workouts for the library panel
-  const workouts = await prisma.workout.findMany({
+  const allWorkouts = await prisma.workout.findMany({
     where: {
       OR: [
         { coachId: user.id },
         { visibility: 'TEAM' },
         { visibility: 'PUBLIC' },
       ],
-      tags: {
-        not: {
-          has: '_archived',
-        },
-      },
     },
     select: {
       id: true,
@@ -84,6 +79,9 @@ export default async function ProgramPlannerPage({
     },
     take: 50,
   });
+
+  // Filter out archived workouts
+  const workouts = allWorkouts.filter((w) => !(w.tags || []).includes('_archived'));
 
   return (
     <ProgramPlannerClient
