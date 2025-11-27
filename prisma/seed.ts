@@ -225,6 +225,13 @@ async function main() {
         name: workoutData.name,
         description: workoutData.description,
         coachId: coach1.id,
+        goal: 'STRENGTH',
+        difficulty: 'INTERMEDIATE',
+        trainingEnvironment: 'GYM',
+        estimatedDuration: 45,
+        sessionTypes: ['STRENGTH'],
+        tags: ['full-body', 'strength'],
+        visibility: 'PRIVATE',
         exercises: {
           create: workoutData.exercises.map((ex: any) => ({
             name: ex.name,
@@ -240,7 +247,148 @@ async function main() {
     });
     createdWorkouts.push(workout);
   }
-  console.log('✅ Workouts created');
+  console.log('✅ Legacy workouts created');
+
+  // Create a sample workout with new structure (sections, blocks, exercises)
+  const structuredWorkout = await prisma.workout.create({
+    data: {
+      name: 'Full Body Strength Builder',
+      description: 'A comprehensive full-body workout focusing on strength and muscle building.',
+      coachId: coach1.id,
+      goal: 'STRENGTH',
+      difficulty: 'INTERMEDIATE',
+      trainingEnvironment: 'GYM',
+      estimatedDuration: 60,
+      sessionTypes: ['STRENGTH'],
+      tags: ['full-body', 'strength', 'beginner-friendly'],
+      visibility: 'PRIVATE',
+      sections: {
+        create: [
+          {
+            name: 'Warm-up',
+            order: 0,
+            notes: '5-10 minutes of light cardio and dynamic stretching',
+            blocks: {
+              create: [
+                {
+                  type: 'CUSTOM',
+                  title: 'Dynamic Warm-up',
+                  order: 0,
+                  exercises: {
+                    create: [
+                      {
+                        name: 'Light Jogging',
+                        targetRepsBySet: [1],
+                        order: 0,
+                      },
+                      {
+                        name: 'Arm Circles',
+                        targetRepsBySet: [10, 10],
+                        order: 1,
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            name: 'Main Workout',
+            order: 1,
+            notes: 'Rest 90 seconds between sets',
+            blocks: {
+              create: [
+                {
+                  type: 'STANDARD_SETS_REPS',
+                  title: 'Block A: Upper Body',
+                  order: 0,
+                  exercises: {
+                    create: [
+                      {
+                        name: 'Barbell Bench Press',
+                        category: 'Push',
+                        equipment: 'Barbell',
+                        notes: 'Focus on controlled movement',
+                        targetRepsBySet: [8, 8, 6],
+                        targetWeightBySet: [60, 65, 70],
+                        order: 0,
+                      },
+                      {
+                        name: 'Bent Over Rows',
+                        category: 'Pull',
+                        equipment: 'Barbell',
+                        notes: 'Keep back straight',
+                        targetRepsBySet: [10, 10, 8],
+                        targetWeightBySet: [50, 55, 60],
+                        order: 1,
+                      },
+                    ],
+                  },
+                },
+                {
+                  type: 'STANDARD_SETS_REPS',
+                  title: 'Block B: Lower Body',
+                  order: 1,
+                  exercises: {
+                    create: [
+                      {
+                        name: 'Barbell Squats',
+                        category: 'Squat',
+                        equipment: 'Barbell',
+                        notes: 'Go below parallel',
+                        targetRepsBySet: [8, 8, 6],
+                        targetWeightBySet: [80, 85, 90],
+                        order: 0,
+                      },
+                      {
+                        name: 'Romanian Deadlifts',
+                        category: 'Hinge',
+                        equipment: 'Barbell',
+                        notes: 'Feel the stretch in hamstrings',
+                        targetRepsBySet: [10, 10, 8],
+                        targetWeightBySet: [60, 65, 70],
+                        order: 1,
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            name: 'Cool-down',
+            order: 2,
+            notes: '5 minutes of static stretching',
+            blocks: {
+              create: [
+                {
+                  type: 'CUSTOM',
+                  title: 'Stretching',
+                  order: 0,
+                  exercises: {
+                    create: [
+                      {
+                        name: 'Quad Stretch',
+                        targetRepsBySet: [1],
+                        order: 0,
+                      },
+                      {
+                        name: 'Hamstring Stretch',
+                        targetRepsBySet: [1],
+                        order: 1,
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  });
+  createdWorkouts.push(structuredWorkout);
+  console.log('✅ Structured workout created with sections, blocks, and exercises');
 
   // ============================================
   // CREATE PROGRAMS
@@ -689,6 +837,90 @@ async function main() {
     ],
   });
   console.log('✅ Coach notes created');
+
+  // ============================================
+  // CREATE SAMPLE WORKOUT SESSION
+  // ============================================
+  const mainClientUser = await prisma.user.findUnique({
+    where: { email: 'client@nelsyfit.demo' },
+  });
+
+  if (mainClientUser && structuredWorkout) {
+    const workoutSession = await prisma.workoutSession.create({
+      data: {
+        clientId: mainClientUser.id,
+        workoutId: structuredWorkout.id,
+        dateTimeStarted: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        dateTimeCompleted: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000), // 45 min later
+        status: 'COMPLETED',
+        clientNotes: 'Great workout! Felt strong today.',
+      },
+    });
+
+    // Get exercises from the structured workout
+    const workoutExercises = await prisma.workoutExercise.findMany({
+      where: {
+        block: {
+          section: {
+            workoutId: structuredWorkout.id,
+          },
+        },
+      },
+      orderBy: [
+        { block: { section: { order: 'asc' } } },
+        { block: { order: 'asc' } },
+        { order: 'asc' },
+      ],
+    });
+
+    // Create set logs for the first exercise (Bench Press)
+    const benchPress = workoutExercises.find((e: any) => e.name === 'Barbell Bench Press');
+    if (benchPress) {
+      await prisma.exerciseSetLog.createMany({
+        data: [
+          {
+            sessionId: workoutSession.id,
+            workoutExerciseId: benchPress.id,
+            exerciseName: benchPress.name,
+            setNumber: 1,
+            targetReps: 8,
+            targetWeight: 60,
+            actualReps: 8,
+            actualWeight: 60,
+            feelingCode: 'GOOD_CHALLENGE',
+            feelingEmoji: '🙂',
+          },
+          {
+            sessionId: workoutSession.id,
+            workoutExerciseId: benchPress.id,
+            exerciseName: benchPress.name,
+            setNumber: 2,
+            targetReps: 8,
+            targetWeight: 65,
+            actualReps: 8,
+            actualWeight: 65,
+            feelingCode: 'GOOD_CHALLENGE',
+            feelingEmoji: '🙂',
+          },
+          {
+            sessionId: workoutSession.id,
+            workoutExerciseId: benchPress.id,
+            exerciseName: benchPress.name,
+            setNumber: 3,
+            targetReps: 6,
+            targetWeight: 70,
+            actualReps: 5,
+            actualWeight: 70,
+            feelingCode: 'HARD',
+            feelingEmoji: '😓',
+            feelingNote: 'Last rep was tough',
+          },
+        ],
+      });
+    }
+
+    console.log('✅ Sample workout session created with set logs');
+  }
 
   console.log('\n🎉 Comprehensive seed completed successfully!');
   console.log('\n📋 Test Accounts:');
