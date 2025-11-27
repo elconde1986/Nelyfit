@@ -19,12 +19,14 @@ import {
   Languages,
   Bell,
   Zap,
-  Award
+  Award,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toggleWorkoutDone, toggleHabitDone } from './actions';
+import { logout } from '@/app/logout/actions';
 
 type Habit = { id: string; labelEn: string; labelEs: string };
 
@@ -232,12 +234,14 @@ export default function ClientTodayClient(props: Props) {
                 : `Hola ${clientName.split(' ')[0]}, este es tu día`}
             </h1>
           </div>
-          <Button asChild variant="secondary" size="sm" className="shrink-0">
-            <Link href="/">
-              <ArrowLeft className="w-3 h-3 mr-1" />
-              {t.back}
-            </Link>
-          </Button>
+          <div className="flex gap-2 shrink-0">
+            <form action={logout}>
+              <Button type="submit" variant="ghost" size="sm">
+                <LogOut className="w-3 h-3 mr-1" />
+                Logout
+              </Button>
+            </form>
+          </div>
         </header>
 
         {/* Notifications */}

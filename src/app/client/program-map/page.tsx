@@ -3,16 +3,24 @@ import { prisma } from '@/lib/prisma';
 import { MapPin, ArrowLeft, Dumbbell, Coffee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { requireAuth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
-const DEMO_CLIENT_EMAIL = 'client@nelyfit.demo';
+export const dynamic = 'force-dynamic';
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 export default async function ProgramMapPage() {
-  const client = await prisma.client.findFirst({
-    where: { email: DEMO_CLIENT_EMAIL },
+  const user = await requireAuth('CLIENT');
+  
+  if (!user || !user.clientId) {
+    redirect('/login/client');
+  }
+
+  const client = await prisma.client.findUnique({
+    where: { id: user.clientId },
     include: {
       currentProgram: {
         include: {

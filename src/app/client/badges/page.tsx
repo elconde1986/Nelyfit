@@ -5,12 +5,19 @@ import type { BadgeId } from '@/lib/types';
 import { Award, ArrowLeft, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { requireAuth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
-const DEMO_CLIENT_EMAIL = 'client@nelyfit.demo';
+export const dynamic = 'force-dynamic';
 
 export default async function ClientBadgesPage() {
-  const client = await prisma.client.findFirst({
-    where: { email: DEMO_CLIENT_EMAIL },
+  const user = await requireAuth('CLIENT');
+  
+  if (!user || !user.clientId) {
+    redirect('/login/client');
+  }
+  const client = await prisma.client.findUnique({
+    where: { id: user.clientId },
     include: { gamification: true },
   });
 

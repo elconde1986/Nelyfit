@@ -4,12 +4,20 @@ import { LayoutTemplate, Home, ArrowLeft, FileText, Calendar, Eye } from 'lucide
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { requireAuth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
-const DEMO_COACH_EMAIL = 'coach@nelyfit.demo';
+export const dynamic = 'force-dynamic';
 
 export default async function TemplatesPage() {
-  const coach = await prisma.user.findFirst({
-    where: { email: DEMO_COACH_EMAIL },
+  const user = await requireAuth('COACH');
+  
+  if (!user) {
+    redirect('/login/coach');
+  }
+
+  const coach = await prisma.user.findUnique({
+    where: { id: user.id },
     include: { templates: true },
   });
 

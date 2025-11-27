@@ -1,15 +1,23 @@
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import ClientTodayClient from './today-client';
 
-const DEMO_CLIENT_EMAIL = 'client@nelyfit.demo';
+export const dynamic = 'force-dynamic';
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 export default async function ClientTodayPage() {
-  const client = await prisma.client.findFirst({
-    where: { email: DEMO_CLIENT_EMAIL },
+  const user = await requireAuth('CLIENT');
+  
+  if (!user || !user.clientId) {
+    redirect('/login/client');
+  }
+
+  const client = await prisma.client.findUnique({
+    where: { id: user.clientId },
     include: {
       gamification: true,
       currentProgram: {

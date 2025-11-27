@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import { 
   Users, 
   Flame, 
@@ -9,17 +11,25 @@ import {
   LayoutTemplate,
   Star,
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { logout } from '@/app/logout/actions';
 
-const DEMO_COACH_EMAIL = 'coach@nelyfit.demo';
+export const dynamic = 'force-dynamic';
 
 export default async function CoachDashboardPage() {
-  const coach = await prisma.user.findFirst({
-    where: { email: DEMO_COACH_EMAIL },
+  const user = await requireAuth('COACH');
+  
+  if (!user) {
+    redirect('/login/coach');
+  }
+
+  const coach = await prisma.user.findUnique({
+    where: { id: user.id },
     include: {
       coachedClients: {
         include: { gamification: true },
@@ -29,13 +39,7 @@ export default async function CoachDashboardPage() {
   });
 
   if (!coach) {
-    return (
-      <main className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center">
-        <p className="text-sm text-slate-300">
-          Demo coach not found. Run migrations and seed the DB.
-        </p>
-      </main>
-    );
+    redirect('/login/coach');
   }
 
   const totalClients = coach.coachedClients.length;
@@ -72,12 +76,12 @@ export default async function CoachDashboardPage() {
                 Templates
               </Link>
             </Button>
-            <Button asChild variant="secondary" size="sm">
-              <Link href="/">
-                <Home className="w-3 h-3 mr-1" />
-                Home
-              </Link>
-            </Button>
+            <form action={logout}>
+              <Button type="submit" variant="ghost" size="sm">
+                <LogOut className="w-3 h-3 mr-1" />
+                Logout
+              </Button>
+            </form>
           </nav>
         </header>
 
