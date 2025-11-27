@@ -1,9 +1,13 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
-export async function loginClient(email: string, password: string) {
+export async function loginClient(formData: FormData) {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
   try {
     const user = await prisma.user.findUnique({
       where: { email },
@@ -11,12 +15,12 @@ export async function loginClient(email: string, password: string) {
     });
 
     if (!user || user.role !== 'CLIENT') {
-      return { success: false, error: 'Invalid email or password' };
+      return { error: 'Invalid email or password' };
     }
 
     // Simple password check (in production, use bcrypt)
     if (user.password !== password) {
-      return { success: false, error: 'Invalid email or password' };
+      return { error: 'Invalid email or password' };
     }
 
     // Set session cookie
@@ -33,11 +37,11 @@ export async function loginClient(email: string, password: string) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
     });
-
-    return { success: true };
   } catch (error) {
     console.error('Login error:', error);
-    return { success: false, error: 'An error occurred during login' };
+    return { error: 'An error occurred during login' };
   }
+
+  redirect('/client/today');
 }
 
