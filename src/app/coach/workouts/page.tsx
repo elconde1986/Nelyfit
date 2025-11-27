@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { Dumbbell, FilePlus, Edit, Copy, Archive, Eye, ArrowLeft, LogOut } from 'lucide-react';
+import { Dumbbell, FilePlus, Edit, Copy, Archive, Eye, ArrowLeft, LogOut, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -176,6 +176,12 @@ export default async function WorkoutsPage() {
                           <Link href={`/coach/workouts/${workout.id}`}>
                             <Eye className="w-3 h-3 mr-1" />
                             {lang === 'en' ? 'View' : 'Ver'}
+                          </Link>
+                        </Button>
+                        <Button asChild variant="secondary" size="sm">
+                          <Link href={`/coach/workouts/${workout.id}?assign=true`}>
+                            <Calendar className="w-3 h-3 mr-1" />
+                            {lang === 'en' ? 'Assign' : 'Asignar'}
                           </Link>
                         </Button>
                         <Button asChild variant="secondary" size="sm">
