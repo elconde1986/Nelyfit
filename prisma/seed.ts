@@ -626,12 +626,17 @@ async function main() {
   // ============================================
   // Create active subscription for client 3
   const premiumClient = createdClients[2];
+  // Delete existing subscription for this user first
+  await prisma.subscription.deleteMany({
+    where: { userId: premiumClient.user.id },
+  });
+
   const subscription = await prisma.subscription.create({
     data: {
       userId: premiumClient.user.id,
       tier: 'PREMIUM_MONTHLY',
       status: 'ACTIVE',
-      stripeSubscriptionId: 'sub_test_123',
+      stripeSubscriptionId: `sub_test_${Date.now()}`, // Unique ID
       stripePriceId: 'price_monthly',
       currentPeriodStart: new Date(),
       currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
