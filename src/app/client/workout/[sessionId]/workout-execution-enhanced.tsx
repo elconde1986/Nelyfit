@@ -18,7 +18,7 @@ import {
   Zap,
   Award,
   X,
-  Link as LinkIcon,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -344,7 +344,7 @@ export default function WorkoutExecutionEnhanced({
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:border-emerald-500 transition-colors"
                         >
-                          <LinkIcon className="w-4 h-4" />
+                          <ExternalLink className="w-4 h-4" />
                           <span className="text-xs">
                             {lang === 'en' ? 'Watch Video' : 'Ver Video'}
                           </span>
