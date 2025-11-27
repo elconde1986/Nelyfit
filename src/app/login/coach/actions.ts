@@ -15,7 +15,7 @@ export async function loginCoach(formData: FormData) {
       include: { coachedClients: true },
     });
 
-    if (!user || user.role !== 'COACH') {
+    if (!user || (user.role !== 'COACH' && user.role !== 'ADMIN')) {
       return { error: 'Invalid email or password' };
     }
 
@@ -37,7 +37,7 @@ export async function loginCoach(formData: FormData) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });
-    cookieStore.set('user_role', 'COACH', {
+    cookieStore.set('user_role', user.role, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -48,7 +48,11 @@ export async function loginCoach(formData: FormData) {
     return { error: 'An error occurred during login' };
   }
 
-  // Redirect must be called outside try-catch
-  redirect('/coach/dashboard');
+  // Redirect based on role
+  if (user.role === 'ADMIN') {
+    redirect('/admin/dashboard');
+  } else {
+    redirect('/coach/dashboard');
+  }
 }
 
