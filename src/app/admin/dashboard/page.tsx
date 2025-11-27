@@ -104,9 +104,10 @@ export default async function AdminDashboardPage() {
                 <Settings className="w-4 h-4" />
                 System Settings
               </Link>
-              <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
-                Manage Users (Coming Soon)
-              </div>
+              <Link href="/admin/users" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <Users className="w-4 h-4" />
+                Manage Users
+              </Link>
             </CardContent>
           </Card>
           <Card>
@@ -114,12 +115,14 @@ export default async function AdminDashboardPage() {
               <CardTitle>Reports</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
-                Trial Conversion Report (Coming Soon)
-              </div>
-              <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
-                Revenue Insights (Coming Soon)
-              </div>
+              <Link href="/admin/reports/trial-conversion" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <TrendingUp className="w-4 h-4" />
+                Trial Conversion Report
+              </Link>
+              <Link href="/admin/reports/revenue" className="flex items-center gap-2 p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+                <DollarSign className="w-4 h-4" />
+                Revenue Insights
+              </Link>
             </CardContent>
           </Card>
         </div>
