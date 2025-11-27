@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
         name,
         description: description || '',
         isPublic: isPublic || false,
-        createdBy: coachId,
         members: {
           create: {
             userId: coachId,

@@ -322,23 +322,23 @@ model Client {
 }
 
 model Program {
-  id      String  @id @default(cuid())
-  name    String
-  description String?
-  goal    String?
-  goalTags String[] // Array of goal tags (strength, fat loss, etc.)
-  difficulty String? // beginner/intermediate/advanced
-  totalWeeks Int @default(4) // 1-16 weeks
-  targetDaysPerWeek Int @default(3) // 2-7 days
-  visibility TemplateVisibility @default(PRIVATE)
-  status String @default("DRAFT") // DRAFT / ACTIVE / ARCHIVED
-  coach   User?   @relation("ProgramCoach", fields: [coachId], references: [id])
-  coachId String?
+  id                String             @id @default(cuid())
+  name              String
+  description       String?
+  goal              String?
+  goalTags          String[] // Array of goal tags (strength, fat loss, etc.)
+  difficulty        String? // beginner/intermediate/advanced
+  totalWeeks        Int                @default(4) // 1-16 weeks
+  targetDaysPerWeek Int                @default(3) // 2-7 days
+  visibility        TemplateVisibility @default(PRIVATE)
+  status            String             @default("DRAFT") // DRAFT / ACTIVE / ARCHIVED
+  coach             User?              @relation("ProgramCoach", fields: [coachId], references: [id])
+  coachId           String?
 
-  clients  Client[]
-  workouts Workout[]
-  days     ProgramDay[]
-  weeks    ProgramWeek[]
+  clients     Client[]
+  workouts    Workout[]
+  days        ProgramDay[]
+  weeks       ProgramWeek[]
   assignments ClientProgramAssignment[]
 
   createdAt DateTime @default(now())
@@ -346,13 +346,13 @@ model Program {
 }
 
 model ProgramWeek {
-  id         String  @id @default(cuid())
-  program    Program @relation(fields: [programId], references: [id])
-  programId  String
-  weekNumber Int
-  title      String?
-  notes      String?
-  weekFocus String? // NORMAL / BUILD / DELOAD / PEAK
+  id                   String  @id @default(cuid())
+  program              Program @relation(fields: [programId], references: [id])
+  programId            String
+  weekNumber           Int
+  title                String?
+  notes                String?
+  weekFocus            String? // NORMAL / BUILD / DELOAD / PEAK
   autoProgressionRules Json? // JSON for progression rules
 
   days ProgramDay[]
@@ -478,35 +478,35 @@ model Exercise {
   canSwap         Boolean  @default(false) // Allow exercise swap
 
   // Exercise library fields
-  category          String?
-  equipment         String?
-  musclesTargeted   String[]
-  isLibraryExercise Boolean  @default(false)
-  defaultVideoUrl String? // Platform-wide demo video
-  defaultThumbnailUrl String?
+  category               String?
+  equipment              String?
+  musclesTargeted        String[]
+  isLibraryExercise      Boolean  @default(false)
+  defaultVideoUrl        String? // Platform-wide demo video
+  defaultThumbnailUrl    String?
   defaultVideoSourceType String? // YOUTUBE | PRIVATE
 
   workoutExercises WorkoutExercise[]
-  coachVideos CoachExerciseVideo[]
+  coachVideos      CoachExerciseVideo[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model ProgramDay {
-  id        String   @id @default(cuid())
-  program   Program  @relation(fields: [programId], references: [id])
-  programId String
-  programWeek ProgramWeek? @relation(fields: [programWeekId], references: [id])
-  programWeekId String?
-  dayIndex  Int // 1-7 (day of week)
-  title     String
-  workout   Workout? @relation(fields: [workoutId], references: [id])
-  workoutId String?
-  isRestDay Boolean  @default(false)
-  notes     String? // Day-level notes for client
+  id                String       @id @default(cuid())
+  program           Program      @relation(fields: [programId], references: [id])
+  programId         String
+  programWeek       ProgramWeek? @relation(fields: [programWeekId], references: [id])
+  programWeekId     String?
+  dayIndex          Int // 1-7 (day of week)
+  title             String
+  workout           Workout?     @relation(fields: [workoutId], references: [id])
+  workoutId         String?
+  isRestDay         Boolean      @default(false)
+  notes             String? // Day-level notes for client
   intensityOverride String? // EASY / NORMAL / HARD
-  tags String[] // e.g., "mobility focused"
+  tags              String[] // e.g., "mobility focused"
 
   sessions WorkoutSession[]
 
@@ -660,8 +660,8 @@ model WeightLog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId, date])
   @@unique([userId, date])
+  @@index([userId, date])
 }
 
 // ============================================
@@ -793,26 +793,26 @@ model ChallengeParticipant {
 // ============================================
 
 model CoachExerciseVideo {
-  id          String   @id @default(cuid())
-  coach       User     @relation("CoachVideos", fields: [coachId], references: [id])
-  coachId     String
-  exercise    Exercise @relation(fields: [exerciseId], references: [id])
-  exerciseId  String
-  
-  status      String   @default("ACTIVE") // ACTIVE | ARCHIVED | BLOCKED
-  storageType String   @default("YOUTUBE") // YOUTUBE | PRIVATE
-  videoUrl    String
-  thumbnailUrl String?
+  id         String   @id @default(cuid())
+  coach      User     @relation("CoachVideos", fields: [coachId], references: [id])
+  coachId    String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+  exerciseId String
+
+  status          String  @default("ACTIVE") // ACTIVE | ARCHIVED | BLOCKED
+  storageType     String  @default("YOUTUBE") // YOUTUBE | PRIVATE
+  videoUrl        String
+  thumbnailUrl    String?
   durationSeconds Int?
-  
+
   title       String
   description String?
-  language    String   @default("en") // en | es
+  language    String  @default("en") // en | es
   variantType String? // TUTORIAL | QUICK_CUE | REGRESSION | ADVANCED | WARMUP | OTHER
-  isPrimary   Boolean  @default(false)
-  
-  lastUsedAt  DateTime?
-  
+  isPrimary   Boolean @default(false)
+
+  lastUsedAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -825,16 +825,16 @@ model CoachExerciseVideo {
 // ============================================
 
 model ClientProgramAssignment {
-  id        String   @id @default(cuid())
-  client    Client   @relation(fields: [clientId], references: [id])
+  id        String  @id @default(cuid())
+  client    Client  @relation(fields: [clientId], references: [id])
   clientId  String
-  program   Program  @relation(fields: [programId], references: [id])
+  program   Program @relation(fields: [programId], references: [id])
   programId String
-  
-  startDate DateTime
-  status    String   @default("ACTIVE") // ACTIVE | COMPLETED | CANCELLED
+
+  startDate    DateTime
+  status       String    @default("ACTIVE") // ACTIVE | COMPLETED | CANCELLED
   lastSyncedAt DateTime?
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
