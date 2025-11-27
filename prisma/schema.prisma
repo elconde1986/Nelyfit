@@ -176,6 +176,7 @@ model User {
   workoutSessions       WorkoutSession[]          @relation("WorkoutSessionClient")
   progressPhotos        ProgressPhoto[]
   bodyMeasurements      BodyMeasurement[]
+  weightLogs            WeightLog[]
   mealPlans             MealPlan[]
   coachAssignments      CoachAssignment[]         @relation("CoachAssignments")
   clientAssignments     CoachAssignment[]         @relation("ClientAssignments")
@@ -644,6 +645,23 @@ model BodyMeasurement {
   createdAt DateTime @default(now())
 
   @@index([userId, date])
+}
+
+model WeightLog {
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  date   DateTime @default(now())
+  weight Float // in kg or lbs
+  unit   String   @default("kg") // kg or lb
+  note   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+  @@unique([userId, date])
 }
 
 // ============================================
