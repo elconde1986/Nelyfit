@@ -121,18 +121,57 @@ export default async function DayDetailsPage({
     feelingNote: log.feelingNote,
   })) || [];
 
-  const dayDetails = {
+  const dayDetails: {
+    date: string;
+    status: 'TODAY' | 'COMPLETED' | 'UPCOMING' | 'MISSED' | 'REST' | 'NO_PROGRAM' | 'NO_DAY';
+    workout: {
+      id: string;
+      name: string;
+      description?: string;
+      estimatedDuration?: number;
+      goal?: string;
+      difficulty?: string;
+      tags?: string[];
+    } | null;
+    session: {
+      id: string;
+      status: string;
+      dateTimeStarted: string;
+      dateTimeCompleted: string | null;
+      clientNotes?: string;
+    } | null;
+    exerciseLogs: Array<{
+      id: string;
+      exerciseName: string;
+      setNumber: number;
+      targetReps: number;
+      targetWeight: number | null;
+      targetUnit: string;
+      actualReps: number | null;
+      actualWeight: number | null;
+      actualUnit: string;
+      feelingCode: string | null;
+      feelingEmoji: string | null;
+      feelingNote: string | null;
+    }>;
+    programDay: {
+      id: string;
+      title: string;
+      isRestDay: boolean;
+      notes?: string | null;
+    };
+  } = {
     date: params.date,
     status,
     workout: programDay.workout
       ? {
           id: programDay.workout.id,
           name: programDay.workout.name,
-          description: programDay.workout.description || undefined,
-          estimatedDuration: programDay.workout.estimatedDuration || undefined,
-          goal: programDay.workout.goal ? String(programDay.workout.goal) : undefined,
-          difficulty: programDay.workout.difficulty ? String(programDay.workout.difficulty) : undefined,
-          tags: programDay.workout.tags,
+          ...(programDay.workout.description && { description: programDay.workout.description }),
+          ...(programDay.workout.estimatedDuration && { estimatedDuration: programDay.workout.estimatedDuration }),
+          ...(programDay.workout.goal && { goal: String(programDay.workout.goal) }),
+          ...(programDay.workout.difficulty && { difficulty: String(programDay.workout.difficulty) }),
+          ...(programDay.workout.tags && { tags: programDay.workout.tags }),
         }
       : null,
     session: session
@@ -141,7 +180,7 @@ export default async function DayDetailsPage({
           status: session.status,
           dateTimeStarted: session.dateTimeStarted.toISOString(),
           dateTimeCompleted: session.dateTimeCompleted?.toISOString() || null,
-          clientNotes: session.clientNotes,
+          ...(session.clientNotes && { clientNotes: session.clientNotes }),
         }
       : null,
     exerciseLogs,
@@ -149,7 +188,7 @@ export default async function DayDetailsPage({
       id: programDay.id,
       title: programDay.title,
       isRestDay: programDay.isRestDay,
-      notes: programDay.notes,
+      ...(programDay.notes && { notes: programDay.notes }),
     },
   };
 
