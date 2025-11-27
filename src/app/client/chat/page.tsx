@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { MessageSquare, ArrowLeft, Send, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,10 +60,10 @@ export default async function ClientChatPage() {
             </div>
           </div>
           <Button asChild variant="secondary" size="sm">
-            <a href="/client/today">
+            <Link href="/client/today">
               <ArrowLeft className="w-3 h-3 mr-1" />
               {t.back}
-            </a>
+            </Link>
           </Button>
         </header>
 

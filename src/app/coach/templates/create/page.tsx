@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { FilePlus, ArrowLeft, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LanguageToggle } from '@/components/LanguageToggle';
@@ -40,10 +41,10 @@ export default async function CreateTemplatePage() {
           </div>
           <nav className="flex gap-2">
             <Button asChild variant="secondary" size="sm">
-              <a href="/coach/templates">
+              <Link href="/coach/templates">
                 <ArrowLeft className="w-3 h-3 mr-1" />
                 Back
-              </a>
+              </Link>
             </Button>
           </nav>
         </header>

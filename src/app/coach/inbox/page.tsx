@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { Mail, ArrowLeft, Send, MessageSquare, User, LogOut, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,10 +77,10 @@ export default async function CoachInboxPage() {
           </div>
           <nav className="flex flex-wrap gap-2 shrink-0">
             <Button asChild variant="secondary" size="sm">
-              <a href="/coach/dashboard">
+              <Link href="/coach/dashboard">
                 <ArrowLeft className="w-3 h-3 mr-1" />
                 Dashboard
-              </a>
+              </Link>
             </Button>
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm">

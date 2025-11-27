@@ -1,5 +1,6 @@
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Users, DollarSign, TrendingUp } from 'lucide-react';
@@ -91,15 +92,15 @@ export default async function AdminDashboardPage() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <a href="/admin/codes" className="block p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
+              <Link href="/admin/codes" className="block p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
                 Create Temporary Code
-              </a>
-              <a href="/admin/users" className="block p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
-                Manage Users
-              </a>
-              <a href="/admin/subscriptions" className="block p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
-                View Subscriptions
-              </a>
+              </Link>
+              <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
+                Manage Users (Coming Soon)
+              </div>
+              <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
+                View Subscriptions (Coming Soon)
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -107,12 +108,12 @@ export default async function AdminDashboardPage() {
               <CardTitle>Reports</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <a href="/admin/trials" className="block p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
-                Trial Conversion Report
-              </a>
-              <a href="/admin/revenue" className="block p-3 rounded-lg bg-slate-900/60 hover:bg-slate-900/80 transition-colors">
-                Revenue Insights
-              </a>
+              <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
+                Trial Conversion Report (Coming Soon)
+              </div>
+              <div className="block p-3 rounded-lg bg-slate-900/40 text-slate-500 cursor-not-allowed">
+                Revenue Insights (Coming Soon)
+              </div>
             </CardContent>
           </Card>
         </div>
