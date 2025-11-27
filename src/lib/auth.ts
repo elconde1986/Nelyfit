@@ -1,5 +1,12 @@
 import { cookies } from 'next/headers';
 import { prisma } from './prisma';
+import { Lang, getLangFromCookie } from './i18n';
+
+export function getLang(): Lang {
+  const cookieStore = cookies();
+  const langCookie = cookieStore.get('lang');
+  return (langCookie?.value as Lang) || 'en';
+}
 
 export async function getCurrentUser() {
   try {

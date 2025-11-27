@@ -42,6 +42,7 @@ export async function loginCoach(formData: FormData) {
     return { error: 'An error occurred during login' };
   }
 
+  // Redirect must be called outside try-catch
   redirect('/coach/dashboard');
 }
 

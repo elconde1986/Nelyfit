@@ -1,12 +1,22 @@
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { Dumbbell, User, Users, Sparkles, ArrowRight, Target, Flame, Trophy, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LanguageToggle } from '@/components/LanguageToggle';
+import { translations, Lang } from '@/lib/i18n';
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const cookieStore = await cookies();
+  const lang = (cookieStore.get('lang')?.value as Lang) || 'en';
+  const t = translations.landing[lang];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+        <div className="flex justify-end mb-4">
+          <LanguageToggle currentLang={lang} />
+        </div>
         {/* Hero Section */}
         <header className="text-center space-y-6 mb-16 animate-fade-in">
           <div className="inline-flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-6 shadow-2xl shadow-emerald-500/30 relative">
@@ -17,11 +27,11 @@ export default function LandingPage() {
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
-              NelyFit
+              {t.title}
             </span>
           </h1>
           <p className="text-slate-300 text-lg sm:text-xl max-w-2xl mx-auto text-balance">
-            Gamified fitness coaching with Duolingo-style programs, badges, streaks, and more.
+            {t.subtitle}
           </p>
         </header>
 
@@ -33,20 +43,20 @@ export default function LandingPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
                 <User className="w-8 h-8 text-white" strokeWidth={2.5} />
               </div>
-              <CardTitle className="text-2xl mb-2">I'm a Coach</CardTitle>
+              <CardTitle className="text-2xl mb-2">{t.coachTitle}</CardTitle>
               <CardDescription className="text-slate-300">
-                Manage clients, create programs, and track progress
+                {t.coachDesc}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button asChild className="w-full" size="lg">
                 <Link href="/login/coach">
-                  Login as Coach
+                  {t.coachLogin}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
               <p className="text-xs text-center text-slate-500">
-                Demo: coach@nelyfit.demo / demo
+                {t.demoCoach}
               </p>
             </CardContent>
           </Card>
@@ -57,20 +67,20 @@ export default function LandingPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/30">
                 <Users className="w-8 h-8 text-white" strokeWidth={2.5} />
               </div>
-              <CardTitle className="text-2xl mb-2">I'm a Client</CardTitle>
+              <CardTitle className="text-2xl mb-2">{t.clientTitle}</CardTitle>
               <CardDescription className="text-slate-300">
-                Track workouts, earn badges, and build streaks
+                {t.clientDesc}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Button asChild variant="secondary" className="w-full" size="lg">
                 <Link href="/login/client">
-                  Login as Client
+                  {t.clientLogin}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
               </Button>
               <p className="text-xs text-center text-slate-500">
-                Demo: client@nelyfit.demo / demo
+                {t.demoClient}
               </p>
             </CardContent>
           </Card>
@@ -83,7 +93,7 @@ export default function LandingPage() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 flex items-center justify-center">
                 <Target className="w-7 h-7 text-emerald-400" strokeWidth={2} />
               </div>
-              <p className="text-sm font-semibold text-slate-200">Gamified</p>
+              <p className="text-sm font-semibold text-slate-200">{t.gamified}</p>
             </CardContent>
           </Card>
           <Card className="text-center hover:border-orange-500/50 transition-all duration-200 hover:scale-105">
@@ -91,7 +101,7 @@ export default function LandingPage() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 flex items-center justify-center">
                 <Flame className="w-7 h-7 text-orange-400" strokeWidth={2} />
               </div>
-              <p className="text-sm font-semibold text-slate-200">Streaks</p>
+              <p className="text-sm font-semibold text-slate-200">{t.streaks}</p>
             </CardContent>
           </Card>
           <Card className="text-center hover:border-yellow-500/50 transition-all duration-200 hover:scale-105">
@@ -99,7 +109,7 @@ export default function LandingPage() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 flex items-center justify-center">
                 <Trophy className="w-7 h-7 text-yellow-400" strokeWidth={2} />
               </div>
-              <p className="text-sm font-semibold text-slate-200">Badges</p>
+              <p className="text-sm font-semibold text-slate-200">{t.badges}</p>
             </CardContent>
           </Card>
           <Card className="text-center hover:border-blue-500/50 transition-all duration-200 hover:scale-105">
@@ -107,7 +117,7 @@ export default function LandingPage() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center">
                 <BookOpen className="w-7 h-7 text-blue-400" strokeWidth={2} />
               </div>
-              <p className="text-sm font-semibold text-slate-200">Programs</p>
+              <p className="text-sm font-semibold text-slate-200">{t.programs}</p>
             </CardContent>
           </Card>
         </section>
