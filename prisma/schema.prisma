@@ -48,12 +48,15 @@ model User {
   password        String
 
   client          Client?         @relation(fields: [clientId], references: [id])
-  clientId        String?
+  clientId        String?         @unique
 
   coachedClients  Client[]        @relation("CoachClients")
   sentMessages    ChatMessage[]   @relation("CoachMessages")
   notificationsSent Notification[] @relation("CoachNotifications")
 
+  programs        Program[]       @relation("ProgramCoach")
+  workouts        Workout[]       @relation("WorkoutCoach")
+  coachNotes      CoachNote[]     @relation("CoachNotes")
   templates       ProgramTemplate[]
   teamsOwned      Team[]          @relation("TeamOwner")
   teamMemberships TeamMember[]
@@ -67,8 +70,8 @@ model Client {
   name             String
   email            String?               @unique
 
-  user             User?                 @relation(fields: [userId], references: [id])
-  userId           String?
+  user             User?                 @relation
+  userId           String?               @unique
 
   coach            User?                 @relation("CoachClients", fields: [coachId], references: [id])
   coachId          String?
@@ -94,9 +97,10 @@ model Program {
   id        String       @id @default(cuid())
   name      String
   goal      String?
-  coach     User?        @relation(fields: [coachId], references: [id])
+  coach     User?        @relation("ProgramCoach", fields: [coachId], references: [id])
   coachId   String?
 
+  clients   Client[]
   workouts  Workout[]
   days      ProgramDay[]
 
@@ -108,13 +112,14 @@ model Workout {
   id          String     @id @default(cuid())
   name        String
   description String?
-  coach       User?      @relation(fields: [coachId], references: [id])
+  coach       User?      @relation("WorkoutCoach", fields: [coachId], references: [id])
   coachId     String?
 
   program     Program?   @relation(fields: [programId], references: [id])
   programId   String?
 
   exercises   Exercise[]
+  programDays ProgramDay[]
 
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -195,7 +200,7 @@ model ChatMessage {
 
 model CoachNote {
   id           String   @id @default(cuid())
-  coach        User     @relation(fields: [coachId], references: [id])
+  coach        User     @relation("CoachNotes", fields: [coachId], references: [id])
   coachId      String
   client       Client   @relation(fields: [clientId], references: [id])
   clientId     String
