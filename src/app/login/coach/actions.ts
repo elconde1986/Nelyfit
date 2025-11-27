@@ -9,8 +9,9 @@ export async function loginCoach(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
+  let user;
   try {
-    const user = await prisma.user.findUnique({
+    user = await prisma.user.findUnique({
       where: { email },
       include: { coachedClients: true },
     });
@@ -49,7 +50,7 @@ export async function loginCoach(formData: FormData) {
   }
 
   // Redirect based on role
-  if (user.role === 'ADMIN') {
+  if (user && user.role === 'ADMIN') {
     redirect('/admin/dashboard');
   } else {
     redirect('/coach/dashboard');
