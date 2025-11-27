@@ -35,6 +35,5 @@ yarn-error.log*
 next-env.d.ts
 
 # Prisma
-prisma/migrations/*
-!prisma/migrations/.gitkeep
+# Keep migrations directory but ignore any temp files
 
