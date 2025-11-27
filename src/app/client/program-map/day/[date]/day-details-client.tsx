@@ -51,7 +51,7 @@ type DayDetails = {
     id: string;
     title: string;
     isRestDay: boolean;
-    notes?: string;
+    notes?: string | null;
   };
 };
 

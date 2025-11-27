@@ -188,7 +188,7 @@ export default async function DayDetailsPage({
       id: programDay.id,
       title: programDay.title,
       isRestDay: programDay.isRestDay,
-      ...(programDay.notes && { notes: programDay.notes }),
+      ...(programDay.notes !== null && programDay.notes !== undefined && { notes: programDay.notes }),
     },
   };
 

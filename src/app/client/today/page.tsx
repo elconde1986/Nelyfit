@@ -59,30 +59,6 @@ export default async function ClientTodayPage() {
     },
   });
 
-  // Check for existing workout session for today
-  let todaySession = null;
-  if (workout) {
-    const programDay = client.currentProgram?.days.find((d) => {
-      const start = startOfDay(client.programStartDate!);
-      const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      return d.dayIndex === diffDays;
-    });
-
-    if (programDay) {
-      todaySession = await prisma.workoutSession.findFirst({
-        where: {
-          clientId: client.id,
-          programDayId: programDay.id,
-          dateTimeStarted: {
-            gte: today,
-            lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
-          },
-        },
-        orderBy: { dateTimeStarted: 'desc' },
-      });
-    }
-  }
-
   // simple default habits
   const habits = [
     { id: 'water', labelEn: 'Drink 2L of water', labelEs: 'Toma 2L de agua' },
@@ -93,6 +69,7 @@ export default async function ClientTodayPage() {
   // program-based workout of the day (if available)
   let workout = null as any;
   let programDayTitle: string | null = null;
+  let programDay = null as any;
   if (client.currentProgram && client.programStartDate) {
     const start = startOfDay(client.programStartDate);
     const diffDays =
@@ -102,7 +79,24 @@ export default async function ClientTodayPage() {
     if (day && !day.isRestDay && day.workout) {
       workout = day.workout;
       programDayTitle = day.title;
+      programDay = day;
     }
+  }
+
+  // Check for existing workout session for today
+  let todaySession: any = null;
+  if (programDay) {
+    todaySession = await prisma.workoutSession.findFirst({
+      where: {
+        clientId: client.id,
+        programDayId: programDay.id,
+        dateTimeStarted: {
+          gte: today,
+          lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+        },
+      },
+      orderBy: { dateTimeStarted: 'desc' },
+    });
   }
 
   const gamificationSnapshot = client.gamification
