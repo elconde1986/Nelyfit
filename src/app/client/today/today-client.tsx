@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useTransition, useState } from 'react';
 import ReactConfetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
@@ -20,7 +19,8 @@ import {
   Bell,
   Zap,
   Award,
-  LogOut
+  LogOut,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -235,6 +235,12 @@ export default function ClientTodayClient(props: Props) {
             </h1>
           </div>
           <div className="flex gap-2 shrink-0">
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/client/chat">
+                <MessageSquare className="w-3 h-3 mr-1" />
+                {lang === 'en' ? 'Chat' : 'Chat'}
+              </Link>
+            </Button>
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm">
                 <LogOut className="w-3 h-3 mr-1" />

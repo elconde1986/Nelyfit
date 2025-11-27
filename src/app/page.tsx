@@ -49,12 +49,12 @@ export default async function LandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 relative z-10">
-              <Button asChild className="w-full" size="lg">
-                <Link href="/login/coach">
+              <Link href="/login/coach" className="block">
+                <Button className="w-full" size="lg">
                   {t.coachLogin}
                   <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
-              </Button>
+                </Button>
+              </Link>
               <p className="text-xs text-center text-slate-500">
                 {t.demoCoach}
               </p>
@@ -73,12 +73,12 @@ export default async function LandingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 relative z-10">
-              <Button asChild variant="secondary" className="w-full" size="lg">
-                <Link href="/login/client">
+              <Link href="/login/client" className="block">
+                <Button variant="secondary" className="w-full" size="lg">
                   {t.clientLogin}
                   <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
-              </Button>
+                </Button>
+              </Link>
               <p className="text-xs text-center text-slate-500">
                 {t.demoClient}
               </p>

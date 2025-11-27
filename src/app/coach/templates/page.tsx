@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import { LayoutTemplate, Home, ArrowLeft, FileText, Calendar, Eye } from 'lucide-react';
+import { LayoutTemplate, Home, ArrowLeft, FileText, Calendar, Eye, FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -66,9 +66,17 @@ export default async function TemplatesPage() {
         </header>
 
         <section className="space-y-3 sm:space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-lg sm:text-xl font-bold">Your Templates</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-emerald-400" />
+              <h2 className="text-lg sm:text-xl font-bold">Your Templates</h2>
+            </div>
+            <Button asChild>
+              <Link href="/coach/templates/create">
+                <FilePlus className="w-4 h-4 mr-1" />
+                Create Template
+              </Link>
+            </Button>
           </div>
           <Card className="divide-y divide-slate-800">
             {coach.templates.length === 0 ? (
