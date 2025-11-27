@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { MapPin, ArrowLeft, Dumbbell, Coffee } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 const DEMO_CLIENT_EMAIL = 'client@nelyfit.demo';
 
@@ -89,9 +92,12 @@ export default async function ProgramMapPage() {
       <div className="mx-auto max-w-2xl px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
         <header className="flex items-start justify-between gap-4 animate-fade-in">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-slate-400 uppercase mb-1.5 tracking-wider">
-              {lang === 'en' ? 'Program map' : 'Mapa del programa'}
-            </p>
+            <div className="flex items-center gap-2 mb-1.5">
+              <MapPin className="w-4 h-4 text-emerald-400" />
+              <p className="text-xs text-slate-400 uppercase tracking-wider">
+                {lang === 'en' ? 'Program map' : 'Mapa del programa'}
+              </p>
+            </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight mb-2">
               {program.name}
             </h1>
@@ -99,12 +105,12 @@ export default async function ProgramMapPage() {
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed">{program.goal}</p>
             )}
           </div>
-          <Link
-            href="/client/today"
-            className="btn-secondary text-xs sm:text-sm shrink-0"
-          >
-            {lang === 'en' ? 'Back' : 'Volver'}
-          </Link>
+          <Button asChild variant="secondary" size="sm" className="shrink-0">
+            <Link href="/client/today">
+              <ArrowLeft className="w-3 h-3 mr-1" />
+              {lang === 'en' ? 'Back' : 'Volver'}
+            </Link>
+          </Button>
         </header>
 
         <p className="text-sm sm:text-base text-slate-400 animate-fade-in" style={{ animationDelay: '0.1s' }}>
@@ -113,57 +119,63 @@ export default async function ProgramMapPage() {
             : 'Cada círculo es un día del programa. Hoy está resaltado.'}
         </p>
 
-        <section className="card relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-6">
-            {nodes.map((n, idx) => {
-              const row = Math.floor(idx / 3);
-              const col = idx % 3;
-              const offset = row % 2 === 0 ? col : 2 - col;
-              const isCurrent = n.status === 'current';
-              const isCompleted = n.status === 'completed';
-              const isRest = n.status === 'rest';
-              const label =
-                lang === 'en'
-                  ? isRest
-                    ? 'Rest'
-                    : `Day ${n.dayIndex}`
-                  : isRest
-                  ? 'Descanso'
-                  : `Día ${n.dayIndex}`;
+        <Card className="relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-6">
+              {nodes.map((n, idx) => {
+                const row = Math.floor(idx / 3);
+                const col = idx % 3;
+                const offset = row % 2 === 0 ? col : 2 - col;
+                const isCurrent = n.status === 'current';
+                const isCompleted = n.status === 'completed';
+                const isRest = n.status === 'rest';
+                const label =
+                  lang === 'en'
+                    ? isRest
+                      ? 'Rest'
+                      : `Day ${n.dayIndex}`
+                    : isRest
+                    ? 'Descanso'
+                    : `Día ${n.dayIndex}`;
 
-              let bg = 'bg-slate-800/60 border-slate-700';
-              let shadow = '';
-              if (isCurrent) {
-                bg = 'bg-gradient-to-br from-emerald-500 to-teal-500 border-emerald-400';
-                shadow = 'shadow-lg shadow-emerald-500/30 scale-110';
-              } else if (isCompleted) {
-                bg = 'bg-gradient-to-br from-emerald-500/30 to-emerald-500/20 border-emerald-400/60';
-                shadow = 'shadow-md shadow-emerald-500/10';
-              } else if (isRest) {
-                bg = 'bg-slate-800/50 border-sky-400/40';
-              }
+                let bg = 'bg-slate-800/60 border-slate-700';
+                let shadow = '';
+                if (isCurrent) {
+                  bg = 'bg-gradient-to-br from-emerald-500 to-teal-500 border-emerald-400';
+                  shadow = 'shadow-lg shadow-emerald-500/30 scale-110';
+                } else if (isCompleted) {
+                  bg = 'bg-gradient-to-br from-emerald-500/30 to-emerald-500/20 border-emerald-400/60';
+                  shadow = 'shadow-md shadow-emerald-500/10';
+                } else if (isRest) {
+                  bg = 'bg-slate-800/50 border-sky-400/40';
+                }
 
-              return (
-                <div
-                  key={n.id}
-                  className={`flex flex-col items-center justify-center gap-2 col-start-${offset + 1} transition-transform duration-200 ${isCurrent ? 'z-10' : ''}`}
-                >
+                return (
                   <div
-                    className={`h-16 w-16 sm:h-20 sm:w-20 rounded-full border-2 flex items-center justify-center text-lg sm:text-xl font-semibold transition-all duration-200 ${bg} ${shadow}`}
+                    key={n.id}
+                    className={`flex flex-col items-center justify-center gap-2 col-start-${offset + 1} transition-transform duration-200 ${isCurrent ? 'z-10' : ''}`}
                   >
-                    {isRest ? '😌' : '💪'}
+                    <div
+                      className={`h-16 w-16 sm:h-20 sm:w-20 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${bg} ${shadow}`}
+                    >
+                      {isRest ? (
+                        <Coffee className="w-6 h-6 sm:w-8 sm:h-8 text-sky-400" />
+                      ) : (
+                        <Dumbbell className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                      )}
+                    </div>
+                    <p className="text-xs sm:text-sm font-semibold text-slate-200">{label}</p>
+                    {n.title && (
+                      <p className="text-[10px] sm:text-xs text-slate-400 text-center line-clamp-2 max-w-[80px] sm:max-w-[100px]">
+                        {n.title}
+                      </p>
+                    )}
                   </div>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-200">{label}</p>
-                  {n.title && (
-                    <p className="text-[10px] sm:text-xs text-slate-400 text-center line-clamp-2 max-w-[80px] sm:max-w-[100px]">
-                      {n.title}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

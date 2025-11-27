@@ -4,6 +4,26 @@ import Link from 'next/link';
 import { useTransition, useState } from 'react';
 import ReactConfetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
+import { 
+  Dumbbell, 
+  Flame, 
+  Trophy, 
+  Target, 
+  CheckCircle2, 
+  Circle, 
+  ArrowLeft, 
+  Map,
+  Droplet,
+  Footprints,
+  Moon,
+  Languages,
+  Bell,
+  Zap,
+  Award
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { toggleWorkoutDone, toggleHabitDone } from './actions';
 
 type Habit = { id: string; labelEn: string; labelEs: string };
@@ -176,23 +196,25 @@ export default function ClientTodayClient(props: Props) {
         <div className="flex justify-end mb-2">
           <div className="inline-flex rounded-xl border border-slate-800 bg-slate-900/60 p-1">
             <button
-              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200 ${
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 ${
                 lang === 'en'
                   ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
               onClick={() => setLang('en')}
             >
+              <Languages className="w-3 h-3" />
               EN
             </button>
             <button
-              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200 ${
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 ${
                 lang === 'es'
                   ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
               onClick={() => setLang('es')}
             >
+              <Languages className="w-3 h-3" />
               ES
             </button>
           </div>
@@ -200,19 +222,22 @@ export default function ClientTodayClient(props: Props) {
 
         <header className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-slate-400 uppercase mb-1.5 tracking-wider">{t.clientView}</p>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Target className="w-4 h-4 text-emerald-400" />
+              <p className="text-xs text-slate-400 uppercase tracking-wider">{t.clientView}</p>
+            </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight leading-tight">
               {lang === 'en'
                 ? `Hi ${clientName.split(' ')[0]}, here's your day`
                 : `Hola ${clientName.split(' ')[0]}, este es tu día`}
             </h1>
           </div>
-          <Link
-            href="/"
-            className="btn-secondary text-xs shrink-0"
-          >
-            {t.back}
-          </Link>
+          <Button asChild variant="secondary" size="sm" className="shrink-0">
+            <Link href="/">
+              <ArrowLeft className="w-3 h-3 mr-1" />
+              {t.back}
+            </Link>
+          </Button>
         </header>
 
         {/* Notifications */}
@@ -221,34 +246,43 @@ export default function ClientTodayClient(props: Props) {
             {notifications.map((n) => (
               <div
                 key={n.id}
-                className="rounded-xl border border-emerald-500/60 bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 px-4 py-3 text-xs sm:text-sm text-emerald-50 shadow-lg shadow-emerald-500/10"
+                className="rounded-xl border border-emerald-500/60 bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 px-4 py-3 text-xs sm:text-sm text-emerald-50 shadow-lg shadow-emerald-500/10 flex items-start gap-3"
               >
-                <p className="font-bold mb-1">{n.title}</p>
-                <p className="text-emerald-100/90">{n.body}</p>
+                <Bell className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-bold mb-1">{n.title}</p>
+                  <p className="text-emerald-100/90">{n.body}</p>
+                </div>
               </div>
             ))}
           </section>
         )}
 
         {/* Gamification header */}
-        <section className="card relative overflow-hidden">
+        <Card className="relative overflow-hidden border-emerald-500/30">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 opacity-50" />
-          <div className="relative space-y-3">
+          <CardContent className="relative space-y-3 pt-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs text-slate-400 uppercase mb-1.5 tracking-wider">{t.levelLabel}</p>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Trophy className="w-4 h-4 text-emerald-400" />
+                  <p className="text-xs text-slate-400 uppercase tracking-wider">{t.levelLabel}</p>
+                </div>
                 <p className="text-3xl sm:text-4xl font-bold gradient-text">Lv. {gamification.level}</p>
               </div>
               <div className="text-right space-y-1">
                 <div className="flex items-center gap-1.5 justify-end">
-                  <span className="text-lg">🔥</span>
+                  <Flame className="w-4 h-4 text-orange-400" />
                   <p className="text-xs sm:text-sm font-semibold text-slate-200">
                     {gamification.streakDays}
                   </p>
                 </div>
-                <p className="text-xs text-slate-400">
-                  {t.xpToNext(remainingXp)}
-                </p>
+                <div className="flex items-center gap-1 justify-end">
+                  <Zap className="w-3 h-3 text-yellow-400" />
+                  <p className="text-xs text-slate-400">
+                    {t.xpToNext(remainingXp)}
+                  </p>
+                </div>
               </div>
             </div>
             <div className="w-full h-2.5 rounded-full bg-slate-800/80 overflow-hidden shadow-inner">
@@ -257,12 +291,15 @@ export default function ClientTodayClient(props: Props) {
                 style={{ width: `${Math.min(100, (gamification.xp % 100))}%` }}
               />
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
         {badgePopup && (
           <section className="rounded-xl border border-yellow-400/60 bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 px-4 py-3 text-xs sm:text-sm text-yellow-50 space-y-2 shadow-lg shadow-yellow-500/20 animate-fade-in">
-            <p className="font-bold text-yellow-100">{t.badgeUnlocked} 🏆</p>
+            <div className="flex items-center gap-2">
+              <Award className="w-4 h-4 text-yellow-300" />
+              <p className="font-bold text-yellow-100">{t.badgeUnlocked}</p>
+            </div>
             {badgePopup.map((b) => (
               <div key={b.id} className="space-y-1">
                 <p className="font-semibold text-yellow-100">
@@ -292,39 +329,48 @@ export default function ClientTodayClient(props: Props) {
         {/* Workout */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm sm:text-base font-bold">{t.todaysWorkout}</h2>
-            <Link
-              href="/client/program-map"
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
-            >
-              {lang === 'en' ? 'Program map' : 'Mapa del programa'} →
-            </Link>
+            <div className="flex items-center gap-2">
+              <Dumbbell className="w-4 h-4 text-emerald-400" />
+              <h2 className="text-sm sm:text-base font-bold">{t.todaysWorkout}</h2>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/client/program-map">
+                <Map className="w-3 h-3 mr-1" />
+                {lang === 'en' ? 'Map' : 'Mapa'}
+              </Link>
+            </Button>
           </div>
-          <div className="card space-y-3">
+          <Card className="space-y-3">
             {!workout ? (
-              <p className="text-slate-300 text-sm sm:text-base py-2">{t.noWorkout}</p>
+              <p className="text-slate-300 text-sm sm:text-base py-2 flex items-center gap-2">
+                <Target className="w-4 h-4 text-slate-500" />
+                {t.noWorkout}
+              </p>
             ) : (
               <>
                 <div>
-                  <p className="font-bold text-base sm:text-lg mb-1">{workout.name}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Dumbbell className="w-5 h-5 text-emerald-400" />
+                    <p className="font-bold text-base sm:text-lg">{workout.name}</p>
+                  </div>
                   {workout.description && (
-                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed ml-7">
                       {workout.description}
                     </p>
                   )}
                 </div>
-                <ul className="space-y-2 text-xs sm:text-sm text-slate-300">
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-300 ml-2">
                   {workout.exercises?.map((ex: any) => (
                     <li key={ex.id} className="flex items-center gap-2">
-                      <span className="text-emerald-400">•</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       <span className="flex-1">{ex.name}</span>
-                      <span className="text-slate-400 font-medium">
+                      <Badge variant="outline" className="text-xs">
                         {ex.sets}x{ex.reps ?? '?'}
-                      </span>
+                      </Badge>
                     </li>
                   ))}
                 </ul>
-                <button
+                <Button
                   disabled={isPending}
                   onClick={() =>
                     startTransition(async () => {
@@ -332,21 +378,32 @@ export default function ClientTodayClient(props: Props) {
                       handleGamificationResponse(res, 'workout');
                     })
                   }
-                  className="btn-primary w-full text-sm sm:text-base"
+                  className="w-full"
                 >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
                   {lang === 'en' ? 'Mark workout done' : 'Marcar entrenamiento hecho'}
-                </button>
+                </Button>
               </>
             )}
-          </div>
+          </Card>
         </section>
 
         {/* Habits */}
         <section className="space-y-3">
-          <h2 className="text-sm sm:text-base font-bold">{t.todaysHabits}</h2>
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm sm:text-base font-bold">{t.todaysHabits}</h2>
+          </div>
           <div className="space-y-2.5">
             {habits.map((h) => {
               const done = log?.habitsCompleted?.includes(h.id);
+              const iconMap: Record<string, any> = {
+                water: Droplet,
+                steps: Footprints,
+                sleep: Moon,
+              };
+              const Icon = iconMap[h.id] || Circle;
+              
               return (
                 <button
                   key={h.id}
@@ -357,18 +414,18 @@ export default function ClientTodayClient(props: Props) {
                       handleGamificationResponse(res, 'habit');
                     })
                   }
-                  className={`w-full text-left rounded-xl border px-4 py-3.5 text-xs sm:text-sm font-medium transition-all duration-200 ${
+                  className={`w-full text-left rounded-xl border px-4 py-3.5 text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-3 ${
                     done
                       ? 'border-emerald-500 bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 text-emerald-50 shadow-lg shadow-emerald-500/10'
                       : 'border-slate-800 bg-slate-900/60 text-slate-200 hover:border-slate-700 hover:bg-slate-900/80 active:scale-[0.98]'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className={`text-lg ${done ? 'opacity-100' : 'opacity-40'}`}>
-                      {done ? '✓' : '○'}
-                    </span>
-                    <span>{lang === 'en' ? h.labelEn : h.labelEs}</span>
-                  </div>
+                  {done ? (
+                    <CheckCircle2 className={`w-5 h-5 shrink-0 ${done ? 'text-emerald-400' : 'text-slate-500'}`} />
+                  ) : (
+                    <Icon className="w-5 h-5 shrink-0 text-slate-500" />
+                  )}
+                  <span className="flex-1">{lang === 'en' ? h.labelEn : h.labelEs}</span>
                 </button>
               );
             })}

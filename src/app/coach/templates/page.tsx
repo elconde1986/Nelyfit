@@ -1,5 +1,9 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { LayoutTemplate, Home, ArrowLeft, FileText, Calendar, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 const DEMO_COACH_EMAIL = 'coach@nelyfit.demo';
 
@@ -24,6 +28,10 @@ export default async function TemplatesPage() {
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 animate-fade-in">
           <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1.5">
+              <LayoutTemplate className="w-5 h-5 text-emerald-400" />
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Templates</p>
+            </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
               Program <span className="gradient-text">Marketplace</span>
               <span className="text-slate-400 text-lg sm:text-xl ml-2">(Demo)</span>
@@ -33,25 +41,28 @@ export default async function TemplatesPage() {
               features can be built on top.
             </p>
           </div>
-          <nav className="flex gap-2 shrink-0">
-            <Link
-              href="/coach/dashboard"
-              className="btn-secondary text-xs sm:text-sm"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/"
-              className="btn-secondary text-xs sm:text-sm"
-            >
-              Home
-            </Link>
+          <nav className="flex flex-wrap gap-2 shrink-0">
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/coach/dashboard">
+                <ArrowLeft className="w-3 h-3 mr-1" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/">
+                <Home className="w-3 h-3 mr-1" />
+                Home
+              </Link>
+            </Button>
           </nav>
         </header>
 
         <section className="space-y-3 sm:space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <h2 className="text-lg sm:text-xl font-bold">Your Templates</h2>
-          <div className="card divide-y divide-slate-800">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-emerald-400" />
+            <h2 className="text-lg sm:text-xl font-bold">Your Templates</h2>
+          </div>
+          <Card className="divide-y divide-slate-800">
             {coach.templates.length === 0 ? (
               <p className="text-sm sm:text-base text-slate-400 px-4 sm:px-6 py-6 sm:py-8 text-center">
                 No templates yet in this demo.
@@ -63,24 +74,32 @@ export default async function TemplatesPage() {
                     key={t.id}
                     className="px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-slate-900/40 transition-colors duration-200"
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base sm:text-lg mb-1">{t.name}</p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-400">
-                        <span>{t.weeks} weeks</span>
-                        <span>•</span>
-                        <span className="capitalize">{t.visibility.toLowerCase()}</span>
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-base sm:text-lg mb-2">{t.name}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {t.weeks} weeks
+                          </Badge>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            {t.visibility.toLowerCase()}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                    <button
-                      className="btn-primary text-xs sm:text-sm shrink-0 w-full sm:w-auto"
-                    >
+                    <Button className="shrink-0 w-full sm:w-auto">
                       Use Template
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>
             )}
-          </div>
+          </Card>
         </section>
       </div>
     </main>
