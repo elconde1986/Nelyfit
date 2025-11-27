@@ -81,7 +81,7 @@ export default async function ProgramMapPage() {
 
   type Status = 'completed' | 'current' | 'locked' | 'rest';
 
-  const nodes = days.map((d) => {
+  const nodes = days.map((d: any) => {
     let status: Status = 'locked';
     const log = logByDayIndex.get(d.dayIndex);
     const isRest = d.isRestDay;
@@ -137,7 +137,7 @@ export default async function ProgramMapPage() {
         <Card className="relative overflow-hidden animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <CardContent className="pt-6">
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-6">
-              {nodes.map((n, idx) => {
+              {nodes.map((n: any, idx: number) => {
                 const row = Math.floor(idx / 3);
                 const col = idx % 3;
                 const offset = row % 2 === 0 ? col : 2 - col;
