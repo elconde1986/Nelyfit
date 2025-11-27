@@ -127,7 +127,7 @@ export default function WorkoutReviewClient({
                                 )}
                               </div>
                               <div className="flex items-center gap-2">
-                                <Badge variant={summary.hasPain ? 'destructive' : 'success'}>
+                                <Badge variant={summary.hasPain ? 'warning' : 'success'}>
                                   {Math.round(summary.completionRate)}% {lang === 'en' ? 'Complete' : 'Completo'}
                                 </Badge>
                                 {summary.maxWeight && (
