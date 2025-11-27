@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
 
 export async function loginClient(formData: FormData) {
   const email = formData.get('email') as string;
@@ -18,8 +19,13 @@ export async function loginClient(formData: FormData) {
       return { error: 'Invalid email or password' };
     }
 
-    // Simple password check (in production, use bcrypt)
-    if (user.password !== password) {
+    // Password check with bcrypt
+    if (!user.password) {
+      return { error: 'Invalid email or password' };
+    }
+    
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
       return { error: 'Invalid email or password' };
     }
 
