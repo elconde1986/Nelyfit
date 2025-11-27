@@ -17,10 +17,10 @@ export default async function AdminWorkoutHistoryPage() {
   const sessions = await prisma.workoutSession.findMany({
     include: {
       client: {
-        include: {
-          user: {
-            select: { id: true, name: true, email: true },
-          },
+        select: {
+          id: true,
+          name: true,
+          email: true,
         },
       },
       workout: {
@@ -101,7 +101,7 @@ export default async function AdminWorkoutHistoryPage() {
                     <div>
                       <p className="font-semibold">{session.workout?.name || 'Unknown Workout'}</p>
                       <p className="text-sm text-slate-400">
-                        {session.client.user?.name || session.client.user?.email || 'Unknown User'}
+                        {session.client.name || session.client.email || 'Unknown User'}
                       </p>
                       <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
                         <Calendar className="w-3 h-3" />
