@@ -53,20 +53,12 @@ export default function CoachLoginClient({ initialLang }: { initialLang: Lang })
             <form action={async (formData: FormData) => {
               setIsPending(true);
               setError(null);
-              try {
-                const result = await loginCoach(formData);
-                if (result?.error) {
-                  setError(result.error);
-                  setIsPending(false);
-                }
-                // If no error, the server action will redirect
-                // The redirect() call throws, so we won't reach here on success
-              } catch (err: any) {
-                // Redirect throws, so if we get here it means redirect worked
-                // The server action handles the redirect based on role
-                // Just refresh to let the redirect happen
-                router.refresh();
+              const result = await loginCoach(formData);
+              if (result?.error) {
+                setError(result.error);
+                setIsPending(false);
               }
+              // If no error, loginCoach will redirect (redirect() throws)
             }} className="space-y-4">
               {error && (
                 <div className="rounded-lg bg-red-500/10 border border-red-500/50 px-4 py-3 text-sm text-red-400 animate-fade-in">
