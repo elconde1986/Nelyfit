@@ -58,13 +58,13 @@ export default function CoachLoginClient({ initialLang }: { initialLang: Lang })
                 if (result?.error) {
                   setError(result.error);
                   setIsPending(false);
-                } else {
-                  router.push('/coach/dashboard');
-                  router.refresh();
                 }
+                // If no error, the server action will redirect
+                // The redirect() call throws, so we won't reach here on success
               } catch (err: any) {
                 // Redirect throws, so if we get here it means redirect worked
-                router.push('/coach/dashboard');
+                // The server action handles the redirect based on role
+                // Just refresh to let the redirect happen
                 router.refresh();
               }
             }} className="space-y-4">
