@@ -23,7 +23,8 @@ export async function logSet(data: {
       where: { id: data.sessionId },
     });
 
-    if (!session || session.clientId !== user.clientId) {
+    // WorkoutSession.clientId references User.id, not Client.id
+    if (!session || session.clientId !== user.id) {
       return { success: false, error: 'Unauthorized' };
     }
 
@@ -110,7 +111,8 @@ export async function completeSession(sessionId: string) {
       },
     });
 
-    if (!session || session.clientId !== user.clientId) {
+    // WorkoutSession.clientId references User.id, not Client.id
+    if (!session || session.clientId !== user.id) {
       return { success: false, error: 'Unauthorized' };
     }
 

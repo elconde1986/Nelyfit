@@ -66,7 +66,8 @@ export default async function WorkoutExecutionPage({
     },
   });
 
-  if (!session || session.clientId !== user.clientId) {
+  // WorkoutSession.clientId references User.id, not Client.id
+  if (!session || session.clientId !== user.id) {
     notFound();
   }
 
