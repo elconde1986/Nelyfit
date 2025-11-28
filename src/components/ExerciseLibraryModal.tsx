@@ -135,17 +135,17 @@ export default function ExerciseLibraryModal({
 
   if (!isOpen) return null;
 
-  const modalities = Array.from(new Set(exercises.map((e) => e.modality).filter(Boolean)));
-  const bodyRegions = Array.from(new Set(exercises.map((e) => e.bodyRegion).filter(Boolean)));
+  const modalities = Array.from(new Set(exercises.map((e) => e.modality).filter((m): m is string => Boolean(m))));
+  const bodyRegions = Array.from(new Set(exercises.map((e) => e.bodyRegion).filter((r): r is string => Boolean(r))));
   const equipmentTypes = Array.from(
     new Set(
       exercises
         .map((e) => e.equipmentCategory)
-        .filter(Boolean)
-        .concat(exercises.map((e) => e.equipmentDetail).filter(Boolean))
+        .filter((e): e is string => Boolean(e))
+        .concat(exercises.map((e) => e.equipmentDetail).filter((e): e is string => Boolean(e)))
     )
   );
-  const difficulties = ['beginner', 'intermediate', 'advanced'];
+  const difficulties = ['beginner', 'intermediate', 'advanced'] as const;
 
   const t = {
     en: {
