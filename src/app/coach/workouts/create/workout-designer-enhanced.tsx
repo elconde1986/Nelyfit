@@ -190,6 +190,7 @@ export default function WorkoutDesignerEnhanced({
   // Exercise Configuration state
   const [selectedExercise, setSelectedExercise] = useState<WorkoutExercise | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [targetSectionId, setTargetSectionId] = useState<string | null>(null); // For adding exercises to specific section
 
   // Fetch exercises
   const fetchExercises = useCallback(async () => {
@@ -386,14 +387,6 @@ export default function WorkoutDesignerEnhanced({
         return;
       }
 
-      console.log('Saving workout:', {
-        name: workoutName,
-        sectionsCount: validSections.length,
-        totalExercises: validSections.reduce((sum, s) => 
-          sum + s.blocks.reduce((blockSum, b) => blockSum + b.exercises.length, 0), 0
-        ),
-      });
-
       const workoutData = {
         name: workoutName.trim(),
         description: (tagline || description)?.trim() || undefined,
@@ -408,6 +401,15 @@ export default function WorkoutDesignerEnhanced({
         sections: validSections,
       };
 
+      console.log('Saving workout:', {
+        name: workoutName,
+        sectionsCount: validSections.length,
+        totalExercises: validSections.reduce((sum, s) => 
+          sum + s.blocks.reduce((blockSum, b) => blockSum + b.exercises.length, 0), 0
+        ),
+      });
+      console.log('Workout data to save:', JSON.stringify(workoutData, null, 2));
+
       if (mode === 'edit' && workoutId) {
         const result = await updateWorkoutStructure(workoutId, workoutData);
         if (result.success) {
@@ -417,12 +419,19 @@ export default function WorkoutDesignerEnhanced({
           alert(result.error || (lang === 'en' ? 'Failed to update workout' : 'Error al actualizar entrenamiento'));
         }
       } else {
-        const result = await createWorkout(workoutData);
-        if (result.success) {
-          router.push(`/coach/workouts/${result.workoutId}`);
-        } else {
-          console.error('Save failed:', result.error);
-          alert(result.error || (lang === 'en' ? 'Failed to save workout' : 'Error al guardar entrenamiento'));
+        console.log('About to call createWorkout...');
+        try {
+          const result = await createWorkout(workoutData);
+          console.log('createWorkout result:', result);
+          if (result.success) {
+            router.push(`/coach/workouts/${result.workoutId}`);
+          } else {
+            console.error('Save failed:', result.error);
+            alert(result.error || (lang === 'en' ? 'Failed to save workout' : 'Error al guardar entrenamiento'));
+          }
+        } catch (err) {
+          console.error('Error calling createWorkout:', err);
+          throw err;
         }
       }
     } catch (error: any) {
@@ -572,9 +581,16 @@ export default function WorkoutDesignerEnhanced({
             showFilters={showFilters}
             onToggleFilters={() => setShowFilters(!showFilters)}
             onAddExercise={(exercise) => {
-              const mainSection = sections.find(s => s.type === 'MAIN') || sections[0];
-              handleAddExercise(exercise, mainSection.id);
+              // Use targetSectionId if set, otherwise default to main section
+              const targetSection = targetSectionId 
+                ? sections.find(s => s.id === targetSectionId)
+                : sections.find(s => s.type === 'MAIN') || sections[0];
+              if (targetSection) {
+                handleAddExercise(exercise, targetSection.id);
+              }
             }}
+            targetSectionId={targetSectionId}
+            onTargetSectionChange={setTargetSectionId}
             lang={lang}
           />
         </div>
@@ -590,7 +606,11 @@ export default function WorkoutDesignerEnhanced({
               setSelectedExercise(exercise);
               setSelectedSectionId(sectionId);
             }}
+            onSelectSection={(sectionId) => {
+              setTargetSectionId(sectionId);
+            }}
             selectedExerciseId={selectedExercise?.id}
+            selectedSectionId={targetSectionId}
             lang={lang}
           />
         </div>

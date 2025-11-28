@@ -53,6 +53,8 @@ export default function ExerciseLibraryPanel({
   showFilters,
   onToggleFilters,
   onAddExercise,
+  targetSectionId,
+  onTargetSectionChange,
   lang,
 }: {
   exercises: Exercise[];
@@ -66,8 +68,11 @@ export default function ExerciseLibraryPanel({
   showFilters: boolean;
   onToggleFilters: () => void;
   onAddExercise: (exercise: Exercise) => void;
+  targetSectionId?: string | null;
+  onTargetSectionChange?: (sectionId: string | null) => void;
   lang: Lang;
 }) {
+  const [draggedLibraryExercise, setDraggedLibraryExercise] = useState<Exercise | null>(null);
   const updateFilter = (key: keyof Filters, value: any) => {
     onFiltersChange({ ...filters, [key]: value });
   };
@@ -216,6 +221,16 @@ export default function ExerciseLibraryPanel({
             <Card
               key={exercise.id}
               className="hover:border-emerald-500/50 transition-colors cursor-pointer"
+              draggable
+              onDragStart={(e) => {
+                setDraggedLibraryExercise(exercise);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('application/json', JSON.stringify(exercise));
+                e.dataTransfer.setData('text/plain', exercise.name);
+              }}
+              onDragEnd={() => {
+                setDraggedLibraryExercise(null);
+              }}
             >
               <CardContent className="p-3">
                 <div className="flex items-start justify-between gap-2 mb-2">
@@ -242,6 +257,7 @@ export default function ExerciseLibraryPanel({
                     variant="ghost"
                     onClick={() => onAddExercise(exercise)}
                     className="shrink-0"
+                    title={lang === 'en' ? 'Add to workout' : 'Agregar al entrenamiento'}
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -256,6 +272,9 @@ export default function ExerciseLibraryPanel({
                     {lang === 'en' ? 'Equipment' : 'Equipamiento'}: {exercise.equipment}
                   </div>
                 )}
+                <div className="text-xs text-slate-500 mt-2 italic">
+                  {lang === 'en' ? 'Drag to section or click +' : 'Arrastra a sección o haz clic en +'}
+                </div>
               </CardContent>
             </Card>
           ))

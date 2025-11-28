@@ -72,7 +72,9 @@ export default function WorkoutBuilderPanel({
   onAddExercise,
   onRemoveExercise,
   onSelectExercise,
+  onSelectSection,
   selectedExerciseId,
+  selectedSectionId,
   lang,
 }: {
   sections: WorkoutSection[];
@@ -80,7 +82,9 @@ export default function WorkoutBuilderPanel({
   onAddExercise: (exercise: Exercise, sectionId: string) => void;
   onRemoveExercise: (sectionId: string, exerciseId: string) => void;
   onSelectExercise: (exercise: WorkoutExercise, sectionId: string) => void;
+  onSelectSection?: (sectionId: string) => void;
   selectedExerciseId?: string;
+  selectedSectionId?: string | null;
   lang: Lang;
 }) {
   const [draggedExercise, setDraggedExercise] = useState<{ exercise: WorkoutExercise; sectionId: string } | null>(null);
@@ -91,10 +95,34 @@ export default function WorkoutBuilderPanel({
 
   const handleDragOver = (e: React.DragEvent, targetSectionId: string, targetIndex?: number) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e: React.DragEvent, targetSectionId: string, targetIndex?: number) => {
     e.preventDefault();
+    
+    // Check if we're dropping a library exercise (from external drag)
+    const libraryExerciseData = e.dataTransfer.getData('application/json');
+    if (libraryExerciseData) {
+      try {
+        const libraryExercise: Exercise = JSON.parse(libraryExerciseData);
+        console.log('Dropping library exercise:', libraryExercise.name, 'to section:', targetSectionId);
+        onAddExercise(libraryExercise, targetSectionId);
+        return;
+      } catch (err) {
+        console.error('Error parsing library exercise data:', err);
+      }
+    }
+    
+    // Check if it's a text/plain drop (fallback for library exercises)
+    const exerciseName = e.dataTransfer.getData('text/plain');
+    if (exerciseName && !draggedExercise) {
+      // This might be a library exercise, but we don't have the full data
+      // The JSON should have been set, so this is a fallback
+      console.warn('Received text drop but no JSON data for:', exerciseName);
+      return;
+    }
+    
     if (!draggedExercise) return;
 
     const { exercise, sectionId: sourceSectionId } = draggedExercise;
@@ -224,7 +252,10 @@ export default function WorkoutBuilderPanel({
       {sections.map((section) => (
         <Card
           key={section.id}
-          className={section.type === 'MAIN' ? 'border-emerald-500/50' : ''}
+          className={`${section.type === 'MAIN' ? 'border-emerald-500/50' : ''} ${
+            selectedSectionId === section.id ? 'ring-2 ring-emerald-400' : ''
+          } transition-all`}
+          onClick={() => onSelectSection?.(section.id)}
         >
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
