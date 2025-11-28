@@ -27,50 +27,85 @@ export async function PATCH(
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    // Update set logs
-    if (body.setLogs && Array.isArray(body.setLogs)) {
-      for (const logUpdate of body.setLogs) {
-        if (logUpdate.id) {
-          // Update existing log
-          await prisma.exerciseSetLog.update({
-            where: { id: logUpdate.id },
-            data: {
-              actualReps: logUpdate.actualReps ?? undefined,
-              actualWeight: logUpdate.actualWeight ?? undefined,
-              actualUnit: logUpdate.actualUnit || 'kg',
-              feelingCode: logUpdate.feelingCode || undefined,
-              feelingEmoji: logUpdate.feelingEmoji || undefined,
-              feelingNote: logUpdate.feelingNote || undefined,
-            },
-          });
-        } else if (logUpdate.workoutExerciseId) {
-          // Create new log (extra set)
-          const maxSetNumber = await prisma.exerciseSetLog.findFirst({
+    // Update set logs - new format: { exerciseLogs: [{ workoutExerciseId, setLogs: [...] }] }
+    if (body.exerciseLogs && Array.isArray(body.exerciseLogs)) {
+      for (const exerciseLog of body.exerciseLogs) {
+        const { workoutExerciseId, setLogs } = exerciseLog;
+
+        if (!workoutExerciseId || !setLogs || !Array.isArray(setLogs)) {
+          continue;
+        }
+
+        // Get workout exercise to get target values
+        const workoutExercise = await prisma.workoutExercise.findUnique({
+          where: { id: workoutExerciseId },
+        });
+
+        if (!workoutExercise) {
+          continue;
+        }
+
+        // Get target reps/weights
+        const targetReps = Array.isArray(workoutExercise.targetRepsBySet)
+          ? workoutExercise.targetRepsBySet
+          : typeof workoutExercise.targetRepsBySet === 'number'
+          ? [workoutExercise.targetRepsBySet]
+          : [8];
+
+        const targetWeights = Array.isArray(workoutExercise.targetWeightBySet)
+          ? workoutExercise.targetWeightBySet
+          : workoutExercise.targetWeightBySet
+          ? [workoutExercise.targetWeightBySet]
+          : [];
+
+        // Process each set log
+        for (const setLog of setLogs) {
+          const { setIndex, actualReps, actualWeight, isExtraSet } = setLog;
+
+          // Determine if this is an extra set
+          const isExtra = isExtraSet || setIndex > targetReps.length;
+
+          // Get or create the set log
+          const existingLog = await prisma.exerciseSetLog.findUnique({
             where: {
-              sessionId,
-              workoutExerciseId: logUpdate.workoutExerciseId,
+              sessionId_workoutExerciseId_setNumber: {
+                sessionId,
+                workoutExerciseId,
+                setNumber: setIndex,
+              },
             },
-            orderBy: { setNumber: 'desc' },
-            select: { setNumber: true },
           });
 
-          await prisma.exerciseSetLog.create({
-            data: {
-              sessionId,
-              workoutExerciseId: logUpdate.workoutExerciseId,
-              exerciseName: logUpdate.exerciseName || 'Extra Set',
-              setNumber: (maxSetNumber?.setNumber || 0) + 1,
-              targetReps: logUpdate.targetReps || 0,
-              targetWeight: logUpdate.targetWeight || null,
-              targetUnit: logUpdate.targetUnit || 'kg',
-              actualReps: logUpdate.actualReps || null,
-              actualWeight: logUpdate.actualWeight || null,
-              actualUnit: logUpdate.actualUnit || 'kg',
-              feelingCode: logUpdate.feelingCode || undefined,
-              feelingEmoji: logUpdate.feelingEmoji || undefined,
-              feelingNote: logUpdate.feelingNote || undefined,
-            },
-          });
+          const targetRep = targetReps[setIndex - 1] as number || 8;
+          const targetWeight = targetWeights[setIndex - 1] as number || null;
+
+          if (existingLog) {
+            // Update existing log
+            await prisma.exerciseSetLog.update({
+              where: { id: existingLog.id },
+              data: {
+                actualReps: actualReps !== undefined ? actualReps : null,
+                actualWeight: actualWeight !== undefined ? actualWeight : null,
+                actualUnit: 'kg',
+              },
+            });
+          } else {
+            // Create new log
+            await prisma.exerciseSetLog.create({
+              data: {
+                sessionId,
+                workoutExerciseId,
+                exerciseName: workoutExercise.name,
+                setNumber: setIndex,
+                targetReps: targetRep,
+                targetWeight,
+                targetUnit: 'kg',
+                actualReps: actualReps !== undefined ? actualReps : null,
+                actualWeight: actualWeight !== undefined ? actualWeight : null,
+                actualUnit: 'kg',
+              },
+            });
+          }
         }
       }
     }

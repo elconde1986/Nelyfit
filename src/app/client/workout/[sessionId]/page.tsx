@@ -1,8 +1,7 @@
-import { prisma } from '@/lib/prisma';
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
-import WorkoutExecutionEnhanced from './workout-execution-enhanced';
+import WorkoutExecutionNew from './workout-execution-new';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,51 +18,11 @@ export default async function WorkoutExecutionPage({
 
   const lang = getLang();
 
-  const client = await prisma.client.findUnique({
-    where: { id: user.clientId },
-    select: { coachId: true },
-  });
-
+  // Verify session exists and belongs to user
+  const { prisma } = await import('@/lib/prisma');
   const session = await prisma.workoutSession.findUnique({
     where: { id: params.sessionId },
-    include: {
-      workout: {
-        include: {
-          sections: {
-            include: {
-              blocks: {
-                include: {
-                  exercises: {
-                    orderBy: { order: 'asc' },
-                    include: {
-                      exercise: {
-                        include: {
-                          coachVideos: client?.coachId
-                            ? {
-                                where: {
-                                  coachId: client.coachId,
-                                  status: 'ACTIVE',
-                                },
-                                orderBy: [{ isPrimary: 'desc' }, { createdAt: 'desc' }],
-                                take: 1,
-                              }
-                            : false,
-                        },
-                      },
-                    },
-                  },
-                },
-                orderBy: { order: 'asc' },
-              },
-            },
-            orderBy: { order: 'asc' },
-          },
-        },
-      },
-      setLogs: {
-        orderBy: { setNumber: 'asc' },
-      },
-    },
+    select: { id: true, clientId: true },
   });
 
   // WorkoutSession.clientId references User.id, not Client.id
@@ -72,10 +31,9 @@ export default async function WorkoutExecutionPage({
   }
 
   return (
-    <WorkoutExecutionEnhanced
-      session={session}
-      clientId={user.clientId}
-      lang={lang}
+    <WorkoutExecutionNew
+      sessionId={params.sessionId}
+      initialLang={lang}
     />
   );
 }
