@@ -1,6 +1,291 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+// Helper function to parse Library.MD exercise format
+function parseExerciseLine(line: string) {
+  const parts = line.split('–');
+  if (parts.length < 2) return null;
+  
+  const name = parts[0].trim();
+  const rest = parts.slice(1).join('–').trim();
+  
+  const segments = rest.split('|').map(s => s.trim());
+  if (segments.length < 5) return null;
+  
+  const modality = segments[0];
+  const movementPattern = segments[1];
+  const primaryMusclesStr = segments[2];
+  const equipmentCategory = segments[3];
+  const difficulty = segments[4];
+  const defaultPrescription = segments[5] || '';
+  
+  // Parse primary muscles (can be "quads/glutes" or "quads, glutes")
+  const primaryMuscles = primaryMusclesStr.split(/[\/,]/).map(m => m.trim());
+  
+  // Determine secondary muscles (if any)
+  const secondaryMuscles: string[] = [];
+  
+  // Determine body region from movement pattern and muscles
+  let bodyRegion = 'full';
+  if (movementPattern.includes('squat') || movementPattern.includes('lunge') || movementPattern.includes('hinge') || primaryMuscles.some(m => ['quads', 'glutes', 'hamstrings', 'calves'].includes(m.toLowerCase()))) {
+    bodyRegion = 'lower';
+  } else if (movementPattern.includes('push') || movementPattern.includes('pull') || primaryMuscles.some(m => ['chest', 'shoulders', 'triceps', 'biceps', 'back', 'lats'].includes(m.toLowerCase()))) {
+    bodyRegion = 'upper';
+  } else if (movementPattern.includes('core') || primaryMuscles.some(m => ['abs', 'core', 'obliques'].includes(m.toLowerCase()))) {
+    bodyRegion = 'core';
+  }
+  
+  // Parse equipment detail (e.g., "machine: Leg Press")
+  let equipmentDetail: string | undefined;
+  let equipmentCategoryClean = equipmentCategory;
+  if (equipmentCategory.includes(':')) {
+    const parts = equipmentCategory.split(':');
+    equipmentCategoryClean = parts[0].trim();
+    equipmentDetail = parts[1].trim();
+  }
+  
+  // Determine impact level
+  let impactLevel = 'low';
+  if (modality === 'plyometric' || modality === 'conditioning' || name.toLowerCase().includes('jump')) {
+    impactLevel = 'high';
+  } else if (modality === 'cardio' || name.toLowerCase().includes('run') || name.toLowerCase().includes('sprint')) {
+    impactLevel = 'medium';
+  }
+  
+  // Determine environment
+  let environment = 'any';
+  if (equipmentCategoryClean.includes('machine') || equipmentCategoryClean.includes('cable')) {
+    environment = 'gym';
+  } else if (equipmentCategoryClean === 'bodyweight') {
+    environment = 'home';
+  }
+  
+  // Determine goal tags
+  const goalTags: string[] = [];
+  if (modality === 'strength') goalTags.push('strength');
+  if (modality === 'hypertrophy') goalTags.push('hypertrophy');
+  if (modality === 'cardio' || modality === 'conditioning') goalTags.push('fat_loss', 'endurance');
+  if (modality === 'mobility' || modality === 'stretch') goalTags.push('mobility');
+  if (modality === 'rehab') goalTags.push('rehab');
+  if (modality === 'power' || name.toLowerCase().includes('power')) goalTags.push('power');
+  if (modality === 'core') goalTags.push('performance');
+  
+  // Determine logging options
+  const loggingOptions: string[] = [];
+  if (defaultPrescription.includes('×') || defaultPrescription.includes('reps')) {
+    loggingOptions.push('reps');
+  }
+  if (defaultPrescription.includes('min') || defaultPrescription.includes('s') || defaultPrescription.includes('time')) {
+    loggingOptions.push('time');
+  }
+  if (equipmentCategoryClean !== 'bodyweight' && !equipmentCategoryClean.includes('cardio')) {
+    loggingOptions.push('weight');
+  }
+  if (defaultPrescription.includes('RPE')) {
+    loggingOptions.push('RPE');
+  }
+  if (defaultPrescription.includes('m') && !defaultPrescription.includes('min')) {
+    loggingOptions.push('distance');
+  }
+  
+  // Parse default prescription
+  let sets = 3;
+  let reps: number | null = null;
+  let durationSeconds: number | null = null;
+  let restSeconds = 60;
+  
+  if (defaultPrescription) {
+    // Parse sets x reps format: "3×12–15" or "4×5–8"
+    const setRepMatch = defaultPrescription.match(/(\d+)×(\d+)(?:–(\d+))?/);
+    if (setRepMatch) {
+      sets = parseInt(setRepMatch[1]);
+      reps = parseInt(setRepMatch[2]);
+    }
+    
+    // Parse time format: "20–30 min" or "3×20–40s"
+    const timeMatch = defaultPrescription.match(/(\d+)–?(\d+)?\s*(min|s|sec)/);
+    if (timeMatch) {
+      const unit = timeMatch[3];
+      const value = parseInt(timeMatch[1]);
+      if (unit === 'min') {
+        durationSeconds = value * 60;
+      } else {
+        durationSeconds = value;
+      }
+    }
+    
+    // Parse rest: "rest 60s" or "rest 90–120s"
+    const restMatch = defaultPrescription.match(/rest\s+(\d+)(?:–(\d+))?s?/);
+    if (restMatch) {
+      restSeconds = parseInt(restMatch[1]);
+    }
+  }
+  
+  return {
+    name,
+    modality,
+    movementPattern,
+    primaryMuscles,
+    secondaryMuscles,
+    bodyRegion,
+    equipmentCategory: equipmentCategoryClean,
+    equipmentDetail,
+    difficulty,
+    impactLevel,
+    environment,
+    goalTags,
+    loggingOptions,
+    sets,
+    reps,
+    durationSeconds,
+    restSeconds,
+    defaultPrescription,
+  };
+}
+
+// Comprehensive exercise library from Library.MD
+const libraryExercises = [
+  // 3.1 Lower Body – Strength
+  'Bodyweight Squat – strength | squat | quads/glutes | bodyweight | beginner | 3×12–15, rest 60s',
+  'Goblet Squat – strength | squat | quads/glutes | dumbbell | beginner | 3×8–12, rest 60–90s',
+  'Back Squat – strength | squat | quads/glutes | barbell | intermediate | 4×5–8, rest 120s',
+  'Front Squat – strength | squat | quads | barbell | intermediate | 4×4–6, rest 120s',
+  'Box Squat – strength | squat | glutes/hamstrings | barbell | intermediate | 4×3–6, rest 150s',
+  'Bulgarian Split Squat (DB) – strength | lunge | quads/glutes | dumbbell | intermediate | 3×8–10/leg, rest 90s',
+  'Reverse Lunge (DB) – strength | lunge | glutes/quads | dumbbell | beginner | 3×8–12/leg, rest 60–90s',
+  'Walking Lunge (DB) – strength | lunge | glutes/quads | dumbbell | intermediate | 3×10–14 steps/leg',
+  'Step-up (DB) – strength | lunge | glutes/quads | dumbbell | beginner | 3×8–10/leg',
+  'Romanian Deadlift (Barbell) – strength | hinge | hamstrings/glutes | barbell | intermediate | 4×6–10, rest 90–120s',
+  'DB Romanian Deadlift – strength | hinge | hamstrings/glutes | dumbbell | beginner | 3×8–12',
+  'Conventional Deadlift – strength | hinge | posterior chain | barbell | advanced | 5×3–5, rest 180s',
+  'Sumo Deadlift – strength | hinge | glutes/adductors | barbell | intermediate | 4×4–6',
+  'Hip Thrust (Barbell) – strength | hinge | glutes | barbell | intermediate | 4×8–12',
+  'Glute Bridge (Bodyweight) – strength | hinge | glutes | bodyweight | beginner | 3×15–20',
+  'Single-leg Glute Bridge – strength | hinge | glutes | bodyweight | intermediate | 3×10–15/leg',
+  'DB Goblet Reverse Lunge to Step-up – strength | lunge | glutes/quads | dumbbell | advanced | 3×6–8/leg',
+  'Standing Calf Raise – strength | gait | calves | bodyweight | beginner | 3×15–20',
+  'Seated Calf Raise (DB on knees) – strength | gait | calves | dumbbell | beginner | 3×12–15',
+  'Heel-elevated Goblet Squat – strength | squat | quads | dumbbell | intermediate | 3×10–12',
+  
+  // 3.2 Upper Body – Push
+  'Push-up – strength | horizontal_push | chest/triceps | bodyweight | beginner | 3×AMRAP (6–15), rest 60s',
+  'Incline Push-up – strength | horizontal_push | chest | bodyweight | beginner | 3×10–15',
+  'Knee Push-up – strength | horizontal_push | chest/triceps | bodyweight | beginner | 3×10–15',
+  'Flat DB Bench Press – strength | horizontal_push | chest/triceps | dumbbell | beginner | 3×8–12',
+  'Barbell Bench Press – strength | horizontal_push | chest/triceps | barbell | intermediate | 4×5–8',
+  'Incline DB Bench Press – strength | horizontal_push | upper chest | dumbbell | intermediate | 4×8–10',
+  'DB Floor Press – strength | horizontal_push | chest/triceps | dumbbell | beginner | 3×8–12',
+  'Overhead Press (Barbell) – strength | vertical_push | delts/triceps | barbell | intermediate | 4×5–8',
+  'Seated DB Shoulder Press – strength | vertical_push | delts/triceps | dumbbell | beginner | 3×8–12',
+  'Arnold Press – strength | vertical_push | delts | dumbbell | intermediate | 3×8–10',
+  'Lateral Raise (DB) – hypertrophy | accessory | medial delts | dumbbell | beginner | 3×12–15',
+  'Front Raise (DB or Plate) – hypertrophy | accessory | anterior delts | dumbbell | beginner | 3×12–15',
+  'Dip (Assisted) – strength | vertical_push | chest/triceps | machine/bodyweight | intermediate | 3×6–10',
+  'Bench Dip (Feet on floor) – strength | vertical_push | triceps | bodyweight | beginner | 3×8–12',
+  'Triceps Rope Pushdown – strength | accessory | triceps | cable | beginner | 3×10–15',
+  'Skull Crushers (EZ Bar) – strength | accessory | triceps | barbell | intermediate | 3×8–12',
+  
+  // 3.3 Upper Body – Pull
+  'Inverted Row (Bodyweight) – strength | horizontal_pull | upper back | bodyweight | beginner | 3×6–12',
+  'Lat Pulldown (Wide Grip) – strength | vertical_pull | lats | machine/cable | beginner | 3×8–12',
+  'Lat Pulldown (Neutral Grip) – strength | vertical_pull | lats/biceps | machine/cable | beginner | 3×8–12',
+  'Pull-up (Assisted) – strength | vertical_pull | lats/biceps | machine/bodyweight | intermediate | 3×5–8',
+  'Pull-up (Bodyweight) – strength | vertical_pull | lats/biceps | bodyweight | advanced | 4×3–6',
+  'Chin-up (Supinated Grip) – strength | vertical_pull | lats/biceps | bodyweight | advanced | 4×3–6',
+  'Bent-over Row (Barbell) – strength | horizontal_pull | lats/rhomboids | barbell | intermediate | 4×6–10',
+  'DB Row (Single-arm) – strength | horizontal_pull | lats/rhomboids | dumbbell | beginner | 3×8–12/side',
+  'Chest-supported Row (DB) – strength | horizontal_pull | mid-back | dumbbell | intermediate | 3×8–12',
+  'Cable Row (Seated) – strength | horizontal_pull | lats/rhomboids | cable | beginner | 3×10–12',
+  'Face Pull – strength | accessory | rear delts/upper traps | cable/band | beginner | 3×12–15',
+  'DB Rear Delt Fly (Incline) – hypertrophy | accessory | rear delts | dumbbell | intermediate | 3×12–15',
+  'Barbell Curl – strength | accessory | biceps | barbell | beginner | 3×8–12',
+  'DB Hammer Curl – strength | accessory | biceps/brachialis | dumbbell | beginner | 3×10–12',
+  'Incline DB Curl – hypertrophy | accessory | biceps | dumbbell | intermediate | 3×8–12',
+  
+  // 3.4 Core & Anti-rotation
+  'Front Plank – core | static | abs | bodyweight | beginner | 3×20–40s',
+  'Side Plank – core | anti_lateral_flexion | obliques | bodyweight | beginner | 3×20–30s/side',
+  'Dead Bug – core | anti_extension | deep core | bodyweight | beginner | 3×8–10/side',
+  'Pallof Press (Cable/Band) – core | anti_rotation | obliques | cable/band | beginner | 3×10–12/side',
+  'Hanging Knee Raise – core | hip_flexion | abs/hip flexors | bodyweight | intermediate | 3×8–12',
+  'Hanging Leg Raise – core | hip_flexion | abs/hip flexors | bodyweight | advanced | 3×6–10',
+  'Cable Woodchop (High-to-Low) – core | rotation | obliques | cable | intermediate | 3×10–12/side',
+  'Ab Wheel Rollout (Knees) – core | anti_extension | abs | wheel/barbell | intermediate | 3×6–10',
+  'Sit-up (Anchored) – core | flexion | abs | bodyweight | beginner | 3×12–20',
+  'Reverse Crunch – core | flexion | lower abs | bodyweight | beginner | 3×10–15',
+  
+  // 3.5 Full Body / Power / Athletic
+  'Kettlebell Swing – conditioning | hinge/power | glutes/hamstrings | kettlebell | intermediate | 3×20–30, rest 60–90s',
+  'Kettlebell Goblet Squat to Press – conditioning | squat + vertical_push | full body | kettlebell | intermediate | 3×8–10',
+  'DB Thruster – conditioning | squat + vertical_push | quads/shoulders | dumbbell | advanced | 3×6–10',
+  'Clean Pull (Barbell) – power | hinge | posterior chain | barbell | advanced | 4×3',
+  'High Pull (Barbell) – power | hinge | traps/posterior chain | barbell | advanced | 4×3–5',
+  'Farmer\'s Carry (DB or KB) – carry | gait | grip/traps | dumbbell/kettlebell | intermediate | 4×20–30m',
+  'Overhead Carry (DB or KB) – carry | gait | shoulders/core | dumbbell/kettlebell | intermediate | 3×15–25m/side',
+  'Sled Push – conditioning | drive | legs/glutes | sled | intermediate | 6×20–40m, rest 60s',
+  'Sled Drag (Backwards) – rehab/conditioning | gait | quads | sled | beginner | 4×20–30m',
+  'Burpee (Strict) – conditioning | full body | full body | bodyweight | advanced | 3×10–15',
+  
+  // 3.6 Machine-Specific Exercises
+  'Leg Press (45°) – strength | squat | quads/glutes | machine: Leg Press | beginner–intermediate | 4×8–12',
+  'Hack Squat Machine – strength | squat | quads | machine: Hack Squat | intermediate | 4×8–10',
+  'Leg Extension – strength | accessory | quads | machine: Leg Extension | beginner | 3×10–15',
+  'Seated Leg Curl – strength | accessory | hamstrings | machine: Leg Curl | beginner | 3×10–15',
+  'Lying Leg Curl – strength | accessory | hamstrings | machine: Leg Curl | intermediate | 3×8–12',
+  'Standing Calf Raise Machine – strength | gait | calves | machine: Calf Raise | beginner | 4×12–15',
+  'Seated Calf Raise Machine – strength | gait | calves | machine | beginner | 3×12–15',
+  'Hip Abductor Machine – strength | accessory | glute med | machine | beginner | 3×12–15',
+  'Hip Adductor Machine – strength | accessory | adductors | machine | beginner | 3×12–15',
+  'Glute Kickback Machine – strength | hinge | glutes | machine | beginner | 3×10–12/leg',
+  'Chest Press Machine – strength | horizontal_push | chest/triceps | machine | beginner | 3×8–12',
+  'Incline Chest Press Machine – strength | horizontal_push | upper chest | machine | intermediate | 3×8–12',
+  'Shoulder Press Machine – strength | vertical_push | delts | machine | beginner | 3×8–12',
+  'Pec Deck (Chest Fly) – hypertrophy | accessory | chest | machine | beginner | 3×10–15',
+  'Cable Crossover (High to Low) – hypertrophy | accessory | lower chest | cable | intermediate | 3×10–15',
+  'Lat Pulldown Machine – strength | vertical_pull | lats | machine | beginner | 3×8–12',
+  'Seated Row Machine – strength | horizontal_pull | mid-back | machine | beginner | 3×8–12',
+  'Assisted Dip Machine – strength | vertical_push | chest/triceps | machine | beginner | 3×6–10',
+  'Assisted Pull-up Machine – strength | vertical_pull | lats | machine | beginner | 3×6–10',
+  'Cable Biceps Curl – accessory | biceps | cable | beginner | 3×10–15',
+  'Reverse Hyper (Machine) – strength/rehab | hinge | glutes/low back | machine: Reverse Hyper | intermediate | 3×10–15',
+  
+  // 3.7 Cardio Machines
+  'Treadmill Walk (Flat) – cardio | gait | legs | treadmill | beginner | 20–30 min @ RPE 4–6',
+  'Treadmill Incline Walk – cardio | gait | glutes | treadmill | beginner | 20–30 min @ RPE 5–7',
+  'Treadmill Jog – cardio | gait | legs | treadmill | intermediate | 20–30 min @ RPE 6–8',
+  'Stationary Bike (Upright) – cardio | gait | quads/glutes | bike | beginner | 20–30 min',
+  'Stationary Bike (Intervals) – cardio | intervals | full legs | bike | intermediate | 10×1 min hard / 1 min easy',
+  'Rowing Machine – cardio | full_body | posterior chain | rower | intermediate | 20 min steady or 8×500 m intervals',
+  'Elliptical Trainer – cardio | low_impact | full body | elliptical | beginner | 20–30 min',
+  'Stair Climber – cardio | gait | quads/glutes | stair machine | intermediate | 15–20 min',
+  'Air Bike (Assault Bike) – conditioning | full body | arms/legs | air bike | advanced | 10×20s hard / 100s easy',
+  'SkiErg – conditioning | upper | lats/triceps | ski machine | intermediate | 10×250 m',
+  
+  // 3.8 Mobility & Stretch
+  'Hip Flexor Stretch (Half-kneeling) – stretch | hip_flexor | hip flexors | bodyweight | beginner | 2×30s/side',
+  'Hamstring Stretch (Supine Band) – stretch | hamstrings | bodyweight/band | beginner | 2×30s/side',
+  'Child\'s Pose – mobility | low_back | bodyweight | beginner | 2×45s',
+  'Cat-Cow – mobility | spine | bodyweight | beginner | 2×10–12 reps',
+  '90/90 Hip Switches – mobility | hips | bodyweight | beginner | 2×10/side',
+  'Pigeon Stretch – stretch | glutes | bodyweight | intermediate | 2×30s/side',
+  'Doorway Pec Stretch – stretch | chest | bodyweight | beginner | 2×30s/side',
+  'Thoracic Extension on Foam Roller – mobility | t-spine | foam roller | beginner | 2×10 reps',
+  'World\'s Greatest Stretch – mobility | multi-joint | bodyweight | intermediate | 2×5/side',
+  'Ankle Dorsiflexion Rock-Backs – mobility | ankle | bodyweight | beginner | 2×12/side',
+  
+  // 3.9 Rehab / Low Impact
+  'Sit-to-Stand from Box/Chair – strength/rehab | squat | quads | bodyweight | beginner | 3×8–10',
+  'Wall Sit – strength/rehab | static_squat | quads | bodyweight | beginner | 3×20–40s',
+  'Heel Slides (Hamstring) – rehab | knee_flexion | hamstrings | sliders/towel | beginner | 2×12',
+  'Mini Band Lateral Walk – rehab | glute_med | band | beginner | 3×10 steps/side',
+  'Clamshells (Band or Bodyweight) – rehab | glute_med | band/bodyweight | beginner | 3×12–15/side',
+  'Bird Dog – rehab/core | anti_rotation | spinal stabilizers | bodyweight | beginner | 3×8–10/side',
+  'Marching Glute Bridge – rehab | hinge | glutes/core | bodyweight | beginner | 3×10–12',
+  'Supported Split Squat (Holding Rail) – rehab | lunge | quads/glutes | bodyweight | beginner | 3×6–8/leg',
+  'Tandem Stance (Balance) – rehab | balance | ankles/hip stabilizers | bodyweight | beginner | 3×20–30s',
+  'Step-up Low Box (Rehab) – rehab | lunge | quads | low step | beginner | 3×8/leg',
+];
+
 const prisma = new PrismaClient();
 
 async function main() {
@@ -250,134 +535,60 @@ async function main() {
   console.log('✅ Legacy workouts created');
 
   // ============================================
-  // CREATE EXERCISE LIBRARY
+  // CREATE EXERCISE LIBRARY (Enhanced from Library.MD)
   // ============================================
-  const exerciseLibrary = [
-    // Upper Body - Push
-    { name: 'Barbell Bench Press', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Chest', 'Triceps', 'Shoulders'], notes: 'Keep your feet flat on the floor and maintain a slight arch in your back. Lower the bar to your chest with control.', isLibrary: true },
-    { name: 'Dumbbell Bench Press', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Chest', 'Triceps', 'Shoulders'], notes: 'Press the dumbbells up and slightly together at the top. Keep your core engaged throughout.', isLibrary: true },
-    { name: 'Push-ups', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Chest', 'Triceps', 'Shoulders'], notes: 'Keep your body in a straight line from head to heels. Lower until your chest nearly touches the floor.', isLibrary: true },
-    { name: 'Incline Dumbbell Press', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Upper Chest', 'Triceps', 'Shoulders'], notes: 'Set the bench to 30-45 degrees. Focus on pressing up and slightly forward.', isLibrary: true },
-    { name: 'Overhead Press', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Shoulders', 'Triceps'], notes: 'Keep your core tight and press the bar straight up. Avoid arching your back excessively.', isLibrary: true },
-    { name: 'Dumbbell Shoulder Press', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Shoulders', 'Triceps'], notes: 'Press the dumbbells up in a controlled motion. Keep your elbows slightly forward.', isLibrary: true },
-    { name: 'Lateral Raises', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Shoulders'], notes: 'Raise your arms to shoulder height with a slight bend in your elbows. Control the descent.', isLibrary: true },
-    { name: 'Tricep Dips', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Triceps', 'Shoulders'], notes: 'Keep your elbows close to your body. Lower until your elbows are at 90 degrees.', isLibrary: true },
-    { name: 'Tricep Pushdowns', category: 'Strength', equipment: 'Cable', musclesTargeted: ['Triceps'], notes: 'Keep your elbows pinned to your sides. Push down until your arms are fully extended.', isLibrary: true },
-    { name: 'Chest Flyes', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Chest'], notes: 'Keep a slight bend in your elbows. Focus on the stretch at the bottom and squeeze at the top.', isLibrary: true },
-    { name: 'Close-Grip Bench Press', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Triceps', 'Chest'], notes: 'Use a grip slightly narrower than shoulder width. Keep your elbows close to your body.', isLibrary: true },
-    { name: 'Pike Push-ups', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Shoulders', 'Triceps'], notes: 'Form a pike position with your hips high. Lower your head toward the floor.', isLibrary: true },
-    { name: 'Diamond Push-ups', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Triceps', 'Chest'], notes: 'Form a diamond shape with your hands. Keep your body straight throughout.', isLibrary: true },
+  let exerciseCount = 0;
+  for (const exerciseLine of libraryExercises) {
+    const parsed = parseExerciseLine(exerciseLine);
+    if (!parsed) continue;
     
-    // Upper Body - Pull
-    { name: 'Pull-ups', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Back', 'Biceps'], notes: 'Pull your body up until your chin clears the bar. Lower with control.', isLibrary: true },
-    { name: 'Chin-ups', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Back', 'Biceps'], notes: 'Use an underhand grip. Pull until your chin is above the bar.', isLibrary: true },
-    { name: 'Bent Over Rows', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Back', 'Biceps'], notes: 'Keep your back straight and core engaged. Pull the bar to your lower chest/upper abdomen.', isLibrary: true },
-    { name: 'Seated Cable Rows', category: 'Strength', equipment: 'Cable', musclesTargeted: ['Back', 'Biceps'], notes: 'Pull the handle to your torso while squeezing your shoulder blades together.', isLibrary: true },
-    { name: 'Lat Pulldowns', category: 'Strength', equipment: 'Cable', musclesTargeted: ['Back', 'Biceps'], notes: 'Pull the bar to your upper chest. Keep your torso upright and avoid swinging.', isLibrary: true },
-    { name: 'T-Bar Rows', category: 'Strength', equipment: 'Machine', musclesTargeted: ['Back', 'Biceps'], notes: 'Keep your chest up and pull the weight to your torso. Squeeze at the top.', isLibrary: true },
-    { name: 'Bicep Curls', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Biceps'], notes: 'Keep your elbows stationary. Curl the weight up and control the descent.', isLibrary: true },
-    { name: 'Hammer Curls', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Biceps', 'Forearms'], notes: 'Use a neutral grip. Curl with your palms facing each other.', isLibrary: true },
-    { name: 'Cable Curls', category: 'Strength', equipment: 'Cable', musclesTargeted: ['Biceps'], notes: 'Keep constant tension on the cable. Squeeze at the top of the movement.', isLibrary: true },
-    { name: 'Face Pulls', category: 'Strength', equipment: 'Cable', musclesTargeted: ['Rear Delts', 'Rhomboids'], notes: 'Pull the cable to your face level. Focus on squeezing your rear delts.', isLibrary: true },
-    { name: 'Inverted Rows', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Back', 'Biceps'], notes: 'Keep your body straight. Pull your chest to the bar.', isLibrary: true },
-    { name: 'Cable Flyes', category: 'Strength', equipment: 'Cable', musclesTargeted: ['Chest'], notes: 'Keep a slight bend in your elbows. Focus on the stretch and squeeze.', isLibrary: true },
-    
-    // Lower Body
-    { name: 'Barbell Squats', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Quads', 'Glutes', 'Hamstrings'], notes: 'Keep your chest up and core tight. Lower until your thighs are parallel to the floor.', isLibrary: true },
-    { name: 'Front Squats', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Quads', 'Glutes', 'Core'], notes: 'Keep the bar on your front delts. Maintain an upright torso throughout.', isLibrary: true },
-    { name: 'Romanian Deadlifts', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Hamstrings', 'Glutes', 'Lower Back'], notes: 'Keep your legs mostly straight. Hinge at the hips and feel the stretch in your hamstrings.', isLibrary: true },
-    { name: 'Conventional Deadlifts', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Hamstrings', 'Glutes', 'Lower Back', 'Traps'], notes: 'Keep your back straight. Drive through your heels and stand up tall.', isLibrary: true },
-    { name: 'Leg Press', category: 'Strength', equipment: 'Machine', musclesTargeted: ['Quads', 'Glutes'], notes: 'Lower the weight until your knees are at 90 degrees. Press through your heels.', isLibrary: true },
-    { name: 'Lunges', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Quads', 'Glutes'], notes: 'Step forward and lower your back knee toward the ground. Keep your front knee over your ankle.', isLibrary: true },
-    { name: 'Walking Lunges', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Quads', 'Glutes'], notes: 'Step forward into a lunge, then push off and step forward with the other leg.', isLibrary: true },
-    { name: 'Bulgarian Split Squats', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Quads', 'Glutes'], notes: 'Place your back foot on a bench. Lower until your front thigh is parallel to the floor.', isLibrary: true },
-    { name: 'Leg Curls', category: 'Strength', equipment: 'Machine', musclesTargeted: ['Hamstrings'], notes: 'Curl your heels toward your glutes. Squeeze at the top.', isLibrary: true },
-    { name: 'Leg Extensions', category: 'Strength', equipment: 'Machine', musclesTargeted: ['Quads'], notes: 'Extend your legs fully. Control the weight on the way down.', isLibrary: true },
-    { name: 'Calf Raises', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Calves'], notes: 'Rise up onto your toes. Hold at the top and lower with control.', isLibrary: true },
-    { name: 'Hip Thrusts', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Glutes', 'Hamstrings'], notes: 'Drive your hips up and squeeze your glutes at the top. Keep your chin tucked.', isLibrary: true },
-    { name: 'Goblet Squats', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Quads', 'Glutes', 'Core'], notes: 'Hold a dumbbell at your chest. Squat down while keeping your torso upright.', isLibrary: true },
-    { name: 'Sumo Deadlifts', category: 'Strength', equipment: 'Barbell', musclesTargeted: ['Glutes', 'Hamstrings', 'Inner Thighs'], notes: 'Use a wide stance with toes pointed out. Keep your back straight.', isLibrary: true },
-    { name: 'Step-ups', category: 'Strength', equipment: 'Bodyweight', musclesTargeted: ['Quads', 'Glutes'], notes: 'Step up onto a box or bench. Drive through your heel and stand tall.', isLibrary: true },
-    
-    // Core
-    { name: 'Plank', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Core', 'Shoulders'], notes: 'Keep your body in a straight line. Hold without sagging or raising your hips.', isLibrary: true },
-    { name: 'Side Plank', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Obliques', 'Core'], notes: 'Stack your feet and keep your body straight. Hold without rotating.', isLibrary: true },
-    { name: 'Russian Twists', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Obliques', 'Core'], notes: 'Rotate your torso side to side. Keep your feet off the ground if possible.', isLibrary: true },
-    { name: 'Leg Raises', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Lower Abs', 'Hip Flexors'], notes: 'Lift your legs straight up. Lower with control without letting them touch the ground.', isLibrary: true },
-    { name: 'Crunches', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Abs'], notes: 'Curl your upper body toward your knees. Keep your lower back on the ground.', isLibrary: true },
-    { name: 'Bicycle Crunches', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Abs', 'Obliques'], notes: 'Alternate bringing your elbow to the opposite knee. Keep your feet off the ground.', isLibrary: true },
-    { name: 'Mountain Climbers', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Core', 'Shoulders'], notes: 'Alternate bringing your knees to your chest quickly. Keep your hips level.', isLibrary: true },
-    { name: 'Dead Bug', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Core'], notes: 'Extend opposite arm and leg while keeping your lower back pressed to the floor.', isLibrary: true },
-    { name: 'Hanging Leg Raises', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Lower Abs', 'Hip Flexors'], notes: 'Hang from a bar and raise your legs. Avoid swinging.', isLibrary: true },
-    { name: 'Ab Wheel Rollout', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Core', 'Shoulders'], notes: 'Roll the wheel forward while keeping your core tight. Don\'t let your lower back sag.', isLibrary: true },
-    { name: 'V-Ups', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Abs', 'Hip Flexors'], notes: 'Lift your legs and torso simultaneously to form a V shape.', isLibrary: true },
-    { name: 'Flutter Kicks', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['Lower Abs', 'Hip Flexors'], notes: 'Alternate kicking your legs up and down. Keep your lower back pressed to the floor.', isLibrary: true },
-    
-    // Cardio
-    { name: 'Burpees', category: 'Cardio', equipment: 'Bodyweight', musclesTargeted: ['Full Body'], notes: 'Drop into a squat, jump back to plank, do a push-up, jump forward, and jump up.', isLibrary: true },
-    { name: 'Jumping Jacks', category: 'Cardio', equipment: 'Bodyweight', musclesTargeted: ['Full Body'], notes: 'Jump while spreading your legs and raising your arms overhead.', isLibrary: true },
-    { name: 'High Knees', category: 'Cardio', equipment: 'Bodyweight', musclesTargeted: ['Legs', 'Core'], notes: 'Run in place while bringing your knees up toward your chest.', isLibrary: true },
-    { name: 'Jump Squats', category: 'Cardio', equipment: 'Bodyweight', musclesTargeted: ['Quads', 'Glutes'], notes: 'Squat down and explode up into a jump. Land softly.', isLibrary: true },
-    { name: 'Box Jumps', category: 'Cardio', equipment: 'Bodyweight', musclesTargeted: ['Quads', 'Glutes'], notes: 'Jump onto a box or platform. Step down carefully.', isLibrary: true },
-    { name: 'Sprint Intervals', category: 'Cardio', equipment: 'Bodyweight', musclesTargeted: ['Legs', 'Cardiovascular'], notes: 'Run at maximum effort for short bursts followed by rest periods.', isLibrary: true },
-    { name: 'Jump Rope', category: 'Cardio', equipment: 'Rope', musclesTargeted: ['Legs', 'Cardiovascular', 'Calves'], notes: 'Jump over the rope with both feet or alternate feet. Keep a steady rhythm.', isLibrary: true },
-    { name: 'Bear Crawls', category: 'Cardio', equipment: 'Bodyweight', musclesTargeted: ['Full Body', 'Core'], notes: 'Crawl on hands and feet while keeping your knees slightly off the ground.', isLibrary: true },
-    
-    // Mobility & Stretch
-    { name: 'Hip Flexor Stretch', category: 'Mobility', equipment: 'Bodyweight', musclesTargeted: ['Hip Flexors'], notes: 'Lunge forward and push your hips forward. Hold for 30-60 seconds.', isLibrary: true },
-    { name: 'Hamstring Stretch', category: 'Mobility', equipment: 'Bodyweight', musclesTargeted: ['Hamstrings'], notes: 'Sit with one leg extended. Reach toward your toes and hold.', isLibrary: true },
-    { name: 'Shoulder Mobility', category: 'Mobility', equipment: 'Bodyweight', musclesTargeted: ['Shoulders'], notes: 'Perform arm circles and cross-body stretches. Move slowly and controlled.', isLibrary: true },
-    { name: 'Thoracic Spine Rotation', category: 'Mobility', equipment: 'Bodyweight', musclesTargeted: ['Upper Back'], notes: 'Rotate your upper back while keeping your hips stable.', isLibrary: true },
-    { name: 'Cat-Cow Stretch', category: 'Mobility', equipment: 'Bodyweight', musclesTargeted: ['Spine'], notes: 'Alternate between arching and rounding your back. Move slowly.', isLibrary: true },
-    { name: 'Pigeon Pose', category: 'Mobility', equipment: 'Bodyweight', musclesTargeted: ['Hip Flexors', 'Glutes'], notes: 'Bring one leg forward in a bent position. Hold and breathe deeply.', isLibrary: true },
-    { name: 'Quad Stretch', category: 'Mobility', equipment: 'Bodyweight', musclesTargeted: ['Quads'], notes: 'Stand and pull your heel toward your glutes. Hold and switch sides.', isLibrary: true },
-    
-    // Functional
-    { name: 'Kettlebell Swings', category: 'Strength', equipment: 'Kettlebell', musclesTargeted: ['Glutes', 'Hamstrings', 'Core'], notes: 'Hinge at the hips and swing the kettlebell to chest height. Use your hips, not your arms.', isLibrary: true },
-    { name: 'Turkish Get-ups', category: 'Strength', equipment: 'Kettlebell', musclesTargeted: ['Full Body'], notes: 'Complex movement transitioning from lying to standing while holding a weight overhead.', isLibrary: true },
-    { name: 'Farmer\'s Walk', category: 'Strength', equipment: 'Dumbbell', musclesTargeted: ['Forearms', 'Core', 'Traps'], notes: 'Walk while carrying heavy weights at your sides. Keep your core tight and shoulders back.', isLibrary: true },
-    { name: 'Battle Ropes', category: 'Cardio', equipment: 'Rope', musclesTargeted: ['Shoulders', 'Core', 'Cardiovascular'], notes: 'Alternate slamming the ropes up and down. Keep your core engaged.', isLibrary: true },
-    { name: 'Medicine Ball Slams', category: 'Cardio', equipment: 'Medicine Ball', musclesTargeted: ['Full Body', 'Core'], notes: 'Lift the ball overhead and slam it down with force. Catch and repeat.', isLibrary: true },
-    { name: 'Wall Balls', category: 'Cardio', equipment: 'Medicine Ball', musclesTargeted: ['Quads', 'Glutes', 'Shoulders'], notes: 'Squat down and throw the ball to a target on the wall. Catch and repeat.', isLibrary: true },
-  ];
-
-  for (const ex of exerciseLibrary) {
     const existing = await prisma.exercise.findFirst({
       where: {
-        name: ex.name,
+        name: parsed.name,
         isLibraryExercise: true,
       },
     });
 
+    const exerciseData = {
+      name: parsed.name,
+      modality: parsed.modality,
+      movementPattern: parsed.movementPattern,
+      primaryMuscles: parsed.primaryMuscles,
+      secondaryMuscles: parsed.secondaryMuscles,
+      bodyRegion: parsed.bodyRegion,
+      equipmentCategory: parsed.equipmentCategory,
+      equipmentDetail: parsed.equipmentDetail,
+      difficulty: parsed.difficulty,
+      impactLevel: parsed.impactLevel,
+      environment: parsed.environment,
+      goalTags: parsed.goalTags,
+      loggingOptions: parsed.loggingOptions,
+      sets: parsed.sets,
+      reps: parsed.reps,
+      durationSeconds: parsed.durationSeconds,
+      restSeconds: parsed.restSeconds,
+      isLibraryExercise: true,
+      defaultVideoSourceType: 'YOUTUBE',
+      // Map to legacy fields for backward compatibility
+      category: parsed.modality === 'strength' ? 'Strength' : parsed.modality === 'cardio' ? 'Cardio' : parsed.modality === 'core' ? 'Core' : parsed.modality === 'mobility' || parsed.modality === 'stretch' ? 'Mobility' : 'Other',
+      equipment: parsed.equipmentDetail || parsed.equipmentCategory,
+      musclesTargeted: parsed.primaryMuscles,
+      notes: `Default: ${parsed.defaultPrescription || 'See prescription'}`,
+    };
+
     if (existing) {
       await prisma.exercise.update({
         where: { id: existing.id },
-        data: {
-          category: ex.category,
-          equipment: ex.equipment,
-          musclesTargeted: ex.musclesTargeted,
-          isLibraryExercise: ex.isLibrary,
-          notes: ex.notes,
-        },
+        data: exerciseData,
       });
     } else {
       await prisma.exercise.create({
-        data: {
-          name: ex.name,
-          category: ex.category,
-          equipment: ex.equipment,
-          musclesTargeted: ex.musclesTargeted,
-          isLibraryExercise: ex.isLibrary,
-          notes: ex.notes,
-          sets: 3,
-          reps: 10,
-          restSeconds: 60,
-          defaultVideoSourceType: 'YOUTUBE',
-        },
+        data: exerciseData,
       });
+      exerciseCount++;
     }
   }
-  console.log(`✅ Exercise library created (${exerciseLibrary.length} exercises)`);
+  console.log(`✅ Exercise library created (${exerciseCount} new exercises from Library.MD)`);
 
   // Create a sample workout with new structure (sections, blocks, exercises)
   const structuredWorkout = await prisma.workout.create({
@@ -1289,7 +1500,7 @@ async function main() {
     });
 
     if (program && clientRecord?.programStartDate) {
-      const startOfDayHelper = (d: Date) => {
+      const startOfDayHelper = (d: Date): Date => {
         const date = new Date(d);
         date.setHours(0, 0, 0, 0);
         return date;
@@ -1299,7 +1510,7 @@ async function main() {
       // Create completed sessions for days 1, 3, 5 (workout days)
       const workoutDays = [1, 3, 5];
       for (const dayIndex of workoutDays) {
-        const programDay = program.days.find((d) => d.dayIndex === dayIndex && !d.isRestDay);
+        const programDay = program.days.find((d: any) => d.dayIndex === dayIndex && !d.isRestDay);
         if (programDay && programDay.workout) {
           const sessionDate = new Date(start);
           sessionDate.setDate(start.getDate() + dayIndex - 1);
@@ -1403,7 +1614,7 @@ async function main() {
       
       programStart.setHours(0, 0, 0, 0);
       const daysSinceStart = Math.floor((today.getTime() - programStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      const todayProgramDay = program.days.find((d) => d.dayIndex === daysSinceStart && !d.isRestDay);
+      const todayProgramDay = program.days.find((d: any) => d.dayIndex === daysSinceStart && !d.isRestDay);
 
       if (todayProgramDay && todayProgramDay.workout) {
         // Create a completed session from 3 days ago with FULL set logs for ALL exercises
@@ -1412,7 +1623,7 @@ async function main() {
         threeDaysAgo.setHours(8, 0, 0, 0);
 
         const previousDayIndex = Math.max(1, daysSinceStart - 3);
-        const previousProgramDay = program.days.find((d) => d.dayIndex === previousDayIndex && !d.isRestDay);
+        const previousProgramDay = program.days.find((d: any) => d.dayIndex === previousDayIndex && !d.isRestDay);
 
         if (previousProgramDay && previousProgramDay.workout) {
           // Check if session already exists

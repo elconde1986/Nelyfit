@@ -477,7 +477,7 @@ model Exercise {
   videoUrl        String?
   canSwap         Boolean  @default(false) // Allow exercise swap
 
-  // Exercise library fields
+  // Exercise library fields (enhanced from Library.MD)
   category               String?
   equipment              String?
   musclesTargeted        String[]
@@ -485,6 +485,20 @@ model Exercise {
   defaultVideoUrl        String? // Platform-wide demo video
   defaultThumbnailUrl    String?
   defaultVideoSourceType String? // YOUTUBE | PRIVATE
+
+  // Library.MD enhanced fields
+  modality          String? // strength | cardio | mobility | stretch | rehab | plyometric | conditioning | core
+  movementPattern   String? // squat | hinge | lunge | horizontal_push | vertical_push | horizontal_pull | vertical_pull | carry | gait | rotation | anti_rotation | core_static etc.
+  primaryMuscles    String[] // Main muscle group(s)
+  secondaryMuscles  String[] // Secondary muscle groups
+  bodyRegion        String? // upper | lower | core | full
+  equipmentCategory String? // bodyweight | dumbbell | barbell | machine | cable | kettlebell | band | TRX | suspension | sled | cardio_machine | other
+  equipmentDetail   String? // e.g. "Leg Press machine", "Smith machine"
+  difficulty        String? // beginner | intermediate | advanced
+  impactLevel       String? // low | medium | high
+  environment       String? // gym | home | outdoor | any
+  goalTags          String[] // strength, hypertrophy, fat_loss, power, rehab, mobility, performance, endurance
+  loggingOptions    String[] // weight, reps, time, distance, RPE
 
   workoutExercises WorkoutExercise[]
   coachVideos      CoachExerciseVideo[]
@@ -617,11 +631,11 @@ model ProgressPhoto {
   user   User   @relation(fields: [userId], references: [id])
   userId String
 
-  photoUrl  String // Cloud storage URL
-  photoType String // front, side, back
-  date      DateTime @default(now())
-  notes     String?
-  sharedWithCoach Boolean @default(false) // Visibility: private or shared-with-coach
+  photoUrl        String // Cloud storage URL
+  photoType       String // front, side, back
+  date            DateTime @default(now())
+  notes           String?
+  sharedWithCoach Boolean  @default(false) // Visibility: private or shared-with-coach
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -638,7 +652,7 @@ model BodyMeasurement {
   weight     Float? // in kg
   bodyFat    Float? // percentage
   muscleMass Float? // in kg
-  
+
   // Upper body
   neck      Float? // in cm
   shoulders Float? // in cm
@@ -649,13 +663,13 @@ model BodyMeasurement {
   bicepR    Float? // in cm
   forearmL  Float? // in cm
   forearmR  Float? // in cm
-  
+
   // Lower body
-  thighs    Float? // in cm (legacy, use thighL/thighR)
-  thighL    Float? // in cm
-  thighR    Float? // in cm
-  calfL     Float? // in cm
-  calfR     Float? // in cm
+  thighs Float? // in cm (legacy, use thighL/thighR)
+  thighL Float? // in cm
+  thighR Float? // in cm
+  calfL  Float? // in cm
+  calfR  Float? // in cm
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -696,8 +710,8 @@ model MealPlan {
   carbs    Float // in grams
   fats     Float // in grams
   fiber    Float? // in grams
-  days     Int @default(1) // Days per cycle (1, 3, 7)
-  
+  days     Int     @default(1) // Days per cycle (1, 3, 7)
+
   createdBy  String // userId who created
   assignedTo String? // clientId if assigned to specific client
 
@@ -720,7 +734,7 @@ model Meal {
 
   name        String
   mealType    String // breakfast, lunch, dinner, snack
-  day         Int @default(1) // Day in cycle (1-7)
+  day         Int      @default(1) // Day in cycle (1-7)
   calories    Int
   protein     Float
   carbs       Float

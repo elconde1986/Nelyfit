@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { translations, Lang } from '@/lib/i18n';
 import { createWorkout } from './actions';
+import ExerciseLibraryModal from '@/components/ExerciseLibraryModal';
 
 type WorkoutSection = {
   id: string;
@@ -70,6 +71,11 @@ export default function WorkoutDesignerClient({ coachId, lang }: { coachId: stri
   const [tags, setTags] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<'PRIVATE' | 'TEAM' | 'PUBLIC'>('PRIVATE');
   const [tagInput, setTagInput] = useState('');
+
+  // Exercise Library Modal state
+  const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   // Workout structure
   const [sections, setSections] = useState<WorkoutSection[]>([
@@ -140,25 +146,58 @@ export default function WorkoutDesignerClient({ coachId, lang }: { coachId: stri
   };
 
   const addExercise = (sectionId: string, blockId: string) => {
+    // Open exercise library modal
+    setSelectedSectionId(sectionId);
+    setSelectedBlockId(blockId);
+    setIsExerciseModalOpen(true);
+  };
+
+  const handleExerciseSelect = (exercise: any) => {
+    if (!selectedSectionId || !selectedBlockId) return;
+
+    // Create WorkoutExercise from library exercise
+    const defaultReps = exercise.reps || 8;
+    const defaultSets = exercise.sets || 3;
+    const repsArray = Array(defaultSets).fill(defaultReps);
+
     const newExercise: WorkoutExercise = {
       id: Date.now().toString(),
-      name: lang === 'en' ? 'New Exercise' : 'Nuevo Ejercicio',
-      targetRepsBySet: [8],
+      name: exercise.name,
+      category: exercise.modality || exercise.category,
+      equipment: exercise.equipmentDetail || exercise.equipmentCategory || exercise.equipment,
+      notes: exercise.notes || undefined,
+      targetRepsBySet: repsArray,
+      targetWeightBySet: exercise.weight ? Array(defaultSets).fill(exercise.weight) : undefined,
+      targetRestBySet: exercise.restSeconds ? Array(defaultSets).fill(exercise.restSeconds) : undefined,
       order: 0,
     };
 
+    // Find the block and add exercise
+    const section = sections.find(s => s.id === selectedSectionId);
+    if (section) {
+      const block = section.blocks.find(b => b.id === selectedBlockId);
+      if (block) {
+        newExercise.order = block.exercises.length;
+      }
+    }
+
     setSections(sections.map(s =>
-      s.id === sectionId
+      s.id === selectedSectionId
         ? {
             ...s,
             blocks: s.blocks.map(b =>
-              b.id === blockId
+              b.id === selectedBlockId
                 ? { ...b, exercises: [...b.exercises, newExercise] }
                 : b
             ),
           }
         : s
     ));
+
+    // Reset modal state
+    setIsExerciseModalOpen(false);
+    setSelectedSectionId(null);
+    setSelectedBlockId(null);
   };
 
   const removeExercise = (sectionId: string, blockId: string, exerciseId: string) => {
@@ -685,6 +724,18 @@ export default function WorkoutDesignerClient({ coachId, lang }: { coachId: stri
           </CardContent>
         </Card>
       </div>
+
+      {/* Exercise Library Modal */}
+      <ExerciseLibraryModal
+        isOpen={isExerciseModalOpen}
+        onClose={() => {
+          setIsExerciseModalOpen(false);
+          setSelectedSectionId(null);
+          setSelectedBlockId(null);
+        }}
+        onSelect={handleExerciseSelect}
+        lang={lang}
+      />
     </div>
   );
 }
