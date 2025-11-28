@@ -71,7 +71,17 @@ export default async function EditWorkoutPage({
               exercises: {
                 orderBy: { order: 'asc' },
                 include: {
-                  exercise: true,
+                  exercise: {
+                    include: {
+                      coachVideos: {
+                        where: {
+                          coachId: user.id,
+                          status: 'ACTIVE',
+                        },
+                        orderBy: { isPrimary: 'desc' },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -120,10 +130,11 @@ export default async function EditWorkoutPage({
         exercises: block.exercises.map((ex) => ({
           id: ex.id,
           exerciseId: ex.exerciseId || undefined,
+          exercise: ex.exercise || undefined, // Include the exercise relation for videos
           name: ex.name,
           category: ex.category || undefined,
           equipment: ex.equipment || undefined,
-          musclesTargeted: ex.musclesTargeted || [],
+          musclesTargeted: Array.isArray(ex.musclesTargeted) ? ex.musclesTargeted : [],
           notes: ex.notes || undefined,
           coachNotes: ex.coachNotes || undefined,
           targetRepsBySet: Array.isArray(ex.targetRepsBySet)
@@ -133,13 +144,17 @@ export default async function EditWorkoutPage({
             : [8],
           targetWeightBySet: Array.isArray(ex.targetWeightBySet)
             ? (ex.targetWeightBySet as number[])
-            : ex.targetWeightBySet
-            ? [ex.targetWeightBySet as number]
+            : ex.targetWeightBySet && typeof ex.targetWeightBySet === 'number'
+            ? [ex.targetWeightBySet]
+            : ex.targetWeightBySet && Array.isArray(ex.targetWeightBySet)
+            ? ex.targetWeightBySet
             : undefined,
           targetRestBySet: Array.isArray(ex.targetRestBySet)
             ? (ex.targetRestBySet as number[])
-            : ex.targetRestBySet
-            ? [ex.targetRestBySet as number]
+            : ex.targetRestBySet && typeof ex.targetRestBySet === 'number'
+            ? [ex.targetRestBySet]
+            : ex.targetRestBySet && Array.isArray(ex.targetRestBySet)
+            ? ex.targetRestBySet
             : undefined,
           targetRPEBySet: Array.isArray(ex.targetRPEBySet)
             ? (ex.targetRPEBySet as number[])

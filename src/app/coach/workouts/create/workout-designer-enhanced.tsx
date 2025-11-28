@@ -118,32 +118,48 @@ export default function WorkoutDesignerEnhanced({
   const [estimatedDuration, setEstimatedDuration] = useState(initialData?.estimatedDuration || 30);
   const [visibility, setVisibility] = useState<'PRIVATE' | 'TEAM' | 'PUBLIC'>((initialData?.visibility as any) || 'PRIVATE');
 
-  // Workout structure
+  // Workout structure - properly load from blocks
   const [sections, setSections] = useState<WorkoutSection[]>(
-    initialData?.sections?.map((s: any) => ({
-      id: s.id || `section-${Date.now()}`,
-      name: s.name,
-      type: s.name.toLowerCase().includes('warm') ? 'WARMUP' : s.name.toLowerCase().includes('finish') ? 'FINISHER' : 'MAIN',
-      order: s.order,
-      notes: s.notes,
-      exercises: s.blocks?.[0]?.exercises?.map((e: any) => ({
-        id: e.id || `ex-${Date.now()}`,
-        exerciseId: e.exerciseId,
-        name: e.name,
-        category: e.category,
-        equipment: e.equipment,
-        musclesTargeted: e.musclesTargeted || [],
-        notes: e.notes,
-        coachNotes: e.coachNotes,
-        sets: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet.length : 3,
-        reps: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet[0] : 10,
-        restSeconds: Array.isArray(e.targetRestBySet) ? e.targetRestBySet[0] : 60,
-        targetRepsBySet: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet : [10, 10, 10],
-        targetWeightBySet: Array.isArray(e.targetWeightBySet) ? e.targetWeightBySet : [null, null, null],
-        targetRestBySet: Array.isArray(e.targetRestBySet) ? e.targetRestBySet : [60, 60, 60],
-        order: e.order,
-      })) || [],
-    })) || [
+    initialData?.sections?.map((s: any) => {
+      // Collect all exercises from all blocks in this section
+      const allExercises: WorkoutExercise[] = [];
+      if (s.blocks && Array.isArray(s.blocks)) {
+        s.blocks.forEach((block: any) => {
+          if (block.exercises && Array.isArray(block.exercises)) {
+            block.exercises.forEach((e: any) => {
+              allExercises.push({
+                id: e.id || `ex-${Date.now()}-${Math.random()}`,
+                exerciseId: e.exerciseId,
+                exercise: e.exercise || (e.exerciseId ? { id: e.exerciseId } : undefined),
+                name: e.name,
+                category: e.category,
+                equipment: e.equipment,
+                musclesTargeted: Array.isArray(e.musclesTargeted) ? e.musclesTargeted : [],
+                notes: e.notes,
+                coachNotes: e.coachNotes,
+                sets: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet.length : (e.targetRepsBySet ? 1 : 3),
+                reps: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet[0] : (typeof e.targetRepsBySet === 'number' ? e.targetRepsBySet : 10),
+                restSeconds: Array.isArray(e.targetRestBySet) ? e.targetRestBySet[0] : (typeof e.targetRestBySet === 'number' ? e.targetRestBySet : 60),
+                targetRepsBySet: Array.isArray(e.targetRepsBySet) ? e.targetRepsBySet : (typeof e.targetRepsBySet === 'number' ? [e.targetRepsBySet] : [10, 10, 10]),
+                targetWeightBySet: Array.isArray(e.targetWeightBySet) ? e.targetWeightBySet : (e.targetWeightBySet ? [e.targetWeightBySet] : [null, null, null]),
+                targetRestBySet: Array.isArray(e.targetRestBySet) ? e.targetRestBySet : (typeof e.targetRestBySet === 'number' ? [e.targetRestBySet] : [60, 60, 60]),
+                loadType: 'WEIGHT',
+                order: e.order || allExercises.length,
+              });
+            });
+          }
+        });
+      }
+      
+      return {
+        id: s.id || `section-${Date.now()}`,
+        name: s.name,
+        type: s.name.toLowerCase().includes('warm') ? 'WARMUP' : s.name.toLowerCase().includes('finish') ? 'FINISHER' : 'MAIN',
+        order: s.order,
+        notes: s.notes,
+        exercises: allExercises,
+      };
+    }) || [
       {
         id: 'warmup',
         name: lang === 'en' ? 'Warm-up' : 'Calentamiento',
