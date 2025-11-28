@@ -152,6 +152,7 @@ export default function WorkoutBuilderPanel({
   };
 
   const addSection = () => {
+    console.log('addSection called, current sections:', sections.length);
     const newSection: WorkoutSection = {
       id: `section-${Date.now()}`,
       name: lang === 'en' ? 'New Section' : 'Nueva Sección',
@@ -159,7 +160,9 @@ export default function WorkoutBuilderPanel({
       order: sections.length,
       exercises: [],
     };
-    onSectionsChange([...sections, newSection]);
+    const updatedSections = [...sections, newSection];
+    console.log('Adding new section, total sections will be:', updatedSections.length);
+    onSectionsChange(updatedSections);
   };
 
   const removeSection = (sectionId: string) => {

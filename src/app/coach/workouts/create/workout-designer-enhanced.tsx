@@ -322,50 +322,90 @@ export default function WorkoutDesignerEnhanced({
       return;
     }
 
-    const mainSection = sections.find(s => s.type === 'MAIN');
+    // Filter out sections with no exercises
+    const sectionsWithExercises = sections.filter(s => s.exercises.length > 0);
+    
+    if (sectionsWithExercises.length === 0) {
+      alert(lang === 'en' 
+        ? 'Please add at least one exercise to your workout before saving.' 
+        : 'Por favor agrega al menos un ejercicio a tu entrenamiento antes de guardar.');
+      return;
+    }
+
+    const mainSection = sectionsWithExercises.find(s => s.type === 'MAIN');
     if (!mainSection || mainSection.exercises.length === 0) {
-      alert(lang === 'en' ? 'Main section must contain at least one exercise' : 'La sección principal debe contener al menos un ejercicio');
+      alert(lang === 'en' 
+        ? 'Main section must contain at least one exercise' 
+        : 'La sección principal debe contener al menos un ejercicio');
       return;
     }
 
     setSaving(true);
     try {
-      const workoutData = {
+      // Filter and validate exercises
+      const validSections = sectionsWithExercises
+        .map(s => ({
+          name: s.name.trim() || 'Section',
+          order: s.order,
+          notes: s.notes?.trim() || undefined,
+          blocks: [{
+            type: 'STANDARD_SETS_REPS' as const,
+            title: undefined,
+            instructions: undefined,
+            rounds: undefined,
+            restBetweenRounds: undefined,
+            estimatedTime: undefined,
+            order: 0,
+            exercises: s.exercises
+              .filter(e => e.name.trim() && e.targetRepsBySet && e.targetRepsBySet.length > 0)
+              .map((e, idx) => ({
+                name: e.name.trim(),
+                category: e.category || undefined,
+                equipment: e.equipment || undefined,
+                notes: e.notes || undefined,
+                coachNotes: e.coachNotes || undefined,
+                targetRepsBySet: e.targetRepsBySet.filter(r => r > 0),
+                targetWeightBySet: e.targetWeightBySet && e.targetWeightBySet.length > 0 
+                  ? e.targetWeightBySet 
+                  : undefined,
+                targetRestBySet: e.targetRestBySet && e.targetRestBySet.length > 0
+                  ? e.targetRestBySet
+                  : undefined,
+                order: idx,
+              })),
+          }].filter(b => b.exercises.length > 0),
+        }))
+        .filter(s => s.blocks.length > 0)
+        .map((s, idx) => ({ ...s, order: idx }));
+
+      if (validSections.length === 0) {
+        alert(lang === 'en' 
+          ? 'Please add at least one valid exercise to your workout before saving.' 
+          : 'Por favor agrega al menos un ejercicio válido a tu entrenamiento antes de guardar.');
+        setSaving(false);
+        return;
+      }
+
+      console.log('Saving workout:', {
         name: workoutName,
-        description: tagline || description,
+        sectionsCount: validSections.length,
+        totalExercises: validSections.reduce((sum, s) => 
+          sum + s.blocks.reduce((blockSum, b) => blockSum + b.exercises.length, 0), 0
+        ),
+      });
+
+      const workoutData = {
+        name: workoutName.trim(),
+        description: (tagline || description)?.trim() || undefined,
         goal: goalTags[0] || undefined,
         difficulty: difficulty || undefined,
         trainingEnvironment: filters.environment || undefined,
         primaryBodyFocus: workoutType || undefined,
         estimatedDuration,
         sessionTypes: [],
-        tags: [...goalTags, ...contextTags],
+        tags: [...goalTags, ...contextTags].length > 0 ? [...goalTags, ...contextTags] : undefined,
         visibility,
-        sections: sections.map(s => ({
-          id: s.id,
-          name: s.name,
-          order: s.order,
-          notes: s.notes,
-          blocks: [{
-            id: `block-${s.id}`,
-            type: 'STANDARD_SETS_REPS',
-            title: '',
-            order: 0,
-            exercises: s.exercises.map(e => ({
-              id: e.id,
-              exerciseId: e.exerciseId,
-              name: e.name,
-              category: e.category,
-              equipment: e.equipment,
-              notes: e.notes,
-              coachNotes: e.coachNotes,
-              targetRepsBySet: e.targetRepsBySet,
-              targetWeightBySet: e.targetWeightBySet,
-              targetRestBySet: e.targetRestBySet,
-              order: e.order,
-            })),
-          }],
-        })),
+        sections: validSections,
       };
 
       if (mode === 'edit' && workoutId) {
@@ -373,6 +413,7 @@ export default function WorkoutDesignerEnhanced({
         if (result.success) {
           router.push(`/coach/workouts/${workoutId}`);
         } else {
+          console.error('Update failed:', result.error);
           alert(result.error || (lang === 'en' ? 'Failed to update workout' : 'Error al actualizar entrenamiento'));
         }
       } else {
@@ -380,12 +421,15 @@ export default function WorkoutDesignerEnhanced({
         if (result.success) {
           router.push(`/coach/workouts/${result.workoutId}`);
         } else {
+          console.error('Save failed:', result.error);
           alert(result.error || (lang === 'en' ? 'Failed to save workout' : 'Error al guardar entrenamiento'));
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving workout:', error);
-      alert(lang === 'en' ? 'An error occurred' : 'Ocurrió un error');
+      alert(lang === 'en' 
+        ? `An error occurred: ${error.message || 'Unknown error'}` 
+        : `Ocurrió un error: ${error.message || 'Error desconocido'}`);
     } finally {
       setSaving(false);
     }
