@@ -238,14 +238,15 @@ export default function WorkoutBuilderPanel({
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 className="text-lg sm:text-xl font-bold">
           {lang === 'en' ? 'Workout Builder' : 'Constructor de Entrenamiento'}
         </h2>
-        <Button variant="ghost" size="sm" onClick={addSection}>
+        <Button variant="ghost" size="sm" onClick={addSection} className="shrink-0">
           <Plus className="w-4 h-4 mr-1" />
-          {lang === 'en' ? 'Add Section' : 'Agregar Sección'}
+          <span className="hidden sm:inline">{lang === 'en' ? 'Add Section' : 'Agregar Sección'}</span>
+          <span className="sm:hidden">{lang === 'en' ? 'Add' : 'Agregar'}</span>
         </Button>
       </div>
 

@@ -445,15 +445,15 @@ export default function WorkoutDesignerEnhanced({
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Top Bar - Workout Metadata */}
-      <div className="border-b border-slate-800 bg-slate-900/50 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4 flex-1">
-            <Button asChild variant="ghost" size="sm">
+      <div className="border-b border-slate-800 bg-slate-900/50 p-3 sm:p-4 sticky top-0 z-40">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-1 w-full sm:w-auto min-w-0">
+            <Button asChild variant="ghost" size="sm" className="shrink-0">
               <Link href="/coach/workouts">
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                {t.back || 'Back'}
+                <ArrowLeft className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">{t.back || 'Back'}</span>
               </Link>
             </Button>
             <input
@@ -461,25 +461,15 @@ export default function WorkoutDesignerEnhanced({
               value={workoutName}
               onChange={(e) => setWorkoutName(e.target.value)}
               placeholder={lang === 'en' ? 'Workout Name' : 'Nombre del Entrenamiento'}
-              className="text-xl font-bold bg-transparent border-none outline-none text-slate-50 placeholder:text-slate-500 flex-1 max-w-md"
+              className="text-lg sm:text-xl font-bold bg-transparent border-none outline-none text-slate-50 placeholder:text-slate-500 flex-1 min-w-0"
               maxLength={80}
             />
-            {tagline && (
-              <input
-                type="text"
-                value={tagline}
-                onChange={(e) => setTagline(e.target.value)}
-                placeholder={lang === 'en' ? 'Tagline (optional)' : 'Eslogan (opcional)'}
-                className="text-sm bg-transparent border-none outline-none text-slate-400 placeholder:text-slate-500 flex-1 max-w-md"
-                maxLength={120}
-              />
-            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end sm:justify-start flex-wrap">
             <select
               value={workoutType}
               onChange={(e) => setWorkoutType(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+              className="px-2 sm:px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-xs sm:text-sm"
             >
               <option value="">{lang === 'en' ? 'Type' : 'Tipo'}</option>
               <option value="FULL_BODY">{lang === 'en' ? 'Full Body' : 'Cuerpo Completo'}</option>
@@ -494,23 +484,24 @@ export default function WorkoutDesignerEnhanced({
             <select
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+              className="px-2 sm:px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-xs sm:text-sm"
             >
               <option value="">{lang === 'en' ? 'Difficulty' : 'Dificultad'}</option>
               <option value="BEGINNER">{lang === 'en' ? 'Beginner' : 'Principiante'}</option>
               <option value="INTERMEDIATE">{lang === 'en' ? 'Intermediate' : 'Intermedio'}</option>
               <option value="ADVANCED">{lang === 'en' ? 'Advanced' : 'Avanzado'}</option>
             </select>
-            <div className="text-sm text-slate-400">
+            <div className="text-xs sm:text-sm text-slate-400 hidden sm:block">
               ~{estimatedDuration} {lang === 'en' ? 'min' : 'min'}
             </div>
-            <Button onClick={handleSave} disabled={saving} size="sm">
-              <Save className="w-4 h-4 mr-1" />
-              {saving ? (lang === 'en' ? 'Saving...' : 'Guardando...') : (lang === 'en' ? 'Save' : 'Guardar')}
+            <Button onClick={handleSave} disabled={saving} size="sm" className="shrink-0">
+              <Save className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">{saving ? (lang === 'en' ? 'Saving...' : 'Guardando...') : (lang === 'en' ? 'Save' : 'Guardar')}</span>
+              <span className="sm:hidden">{saving ? '...' : '✓'}</span>
             </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
           <select
             value={visibility}
             onChange={(e) => setVisibility(e.target.value as any)}
@@ -525,7 +516,7 @@ export default function WorkoutDesignerEnhanced({
             value={tagline}
             onChange={(e) => setTagline(e.target.value)}
             placeholder={lang === 'en' ? 'Add tagline...' : 'Agregar eslogan...'}
-            className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-50 text-xs flex-1 max-w-xs"
+            className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-50 text-xs flex-1 min-w-0 max-w-xs"
             maxLength={120}
           />
           <div className="flex gap-1 flex-wrap">
@@ -547,6 +538,7 @@ export default function WorkoutDesignerEnhanced({
               const tag = prompt(lang === 'en' ? 'Add goal tag (e.g., Strength, Fat Loss)' : 'Agregar etiqueta de objetivo (ej., Fuerza, Pérdida de Grasa)');
               if (tag) setGoalTags([...goalTags, tag]);
             }}
+            className="hidden sm:flex"
           >
             <Plus className="w-3 h-3 mr-1" />
             {lang === 'en' ? 'Goal Tag' : 'Etiqueta Objetivo'}
@@ -558,6 +550,7 @@ export default function WorkoutDesignerEnhanced({
               const tag = prompt(lang === 'en' ? 'Add context tag (e.g., Home-friendly, Beginner)' : 'Agregar etiqueta de contexto (ej., Para Casa, Principiante)');
               if (tag) setContextTags([...contextTags, tag]);
             }}
+            className="hidden sm:flex"
           >
             <Plus className="w-3 h-3 mr-1" />
             {lang === 'en' ? 'Context Tag' : 'Etiqueta Contexto'}
@@ -566,9 +559,9 @@ export default function WorkoutDesignerEnhanced({
       </div>
 
       {/* Three-Panel Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* LEFT PANEL - Exercise Library */}
-        <div className="w-80 border-r border-slate-800 bg-slate-900/30 overflow-y-auto">
+        <div className="w-full lg:w-80 border-r-0 lg:border-r border-slate-800 bg-slate-900/30 overflow-y-auto max-h-[40vh] lg:max-h-none">
           <ExerciseLibraryPanel
             exercises={exercises}
             loading={loadingExercises}
@@ -596,7 +589,7 @@ export default function WorkoutDesignerEnhanced({
         </div>
 
         {/* CENTER PANEL - Workout Builder */}
-        <div className="flex-1 overflow-y-auto bg-slate-950/50">
+        <div className="flex-1 overflow-y-auto bg-slate-950/50 min-h-[40vh] lg:min-h-0">
           <WorkoutBuilderPanel
             sections={sections}
             onSectionsChange={setSections}
@@ -616,7 +609,7 @@ export default function WorkoutDesignerEnhanced({
         </div>
 
         {/* RIGHT PANEL - Exercise Configuration */}
-        <div className="w-96 border-l border-slate-800 bg-slate-900/30 overflow-y-auto">
+        <div className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-slate-800 bg-slate-900/30 overflow-y-auto max-h-[40vh] lg:max-h-none">
           {selectedExercise ? (
             <ExerciseConfigPanel
               exercise={selectedExercise}

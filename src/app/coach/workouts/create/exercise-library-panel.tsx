@@ -88,10 +88,10 @@ export default function ExerciseLibraryPanel({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-slate-800">
+      <div className="p-3 sm:p-4 border-b border-slate-800">
         <div className="flex items-center gap-2 mb-3">
-          <Dumbbell className="w-5 h-5 text-emerald-400" />
-          <h2 className="font-bold text-lg">
+          <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+          <h2 className="font-bold text-base sm:text-lg">
             {lang === 'en' ? 'Exercise Library' : 'Biblioteca de Ejercicios'}
           </h2>
         </div>
@@ -207,7 +207,7 @@ export default function ExerciseLibraryPanel({
       </div>
 
       {/* Exercise List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
         {loading ? (
           <div className="text-center text-slate-400 py-8">
             {lang === 'en' ? 'Loading exercises...' : 'Cargando ejercicios...'}

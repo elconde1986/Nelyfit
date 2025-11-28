@@ -16,10 +16,12 @@ export default async function CreateWorkoutPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 safe-top safe-bottom">
-      <div className="flex justify-end p-4 absolute top-0 right-0 z-10">
+      <div className="flex justify-end p-2 sm:p-4 absolute top-0 right-0 z-50">
         <LanguageToggle currentLang={lang} />
       </div>
-      <WorkoutDesignerEnhanced coachId={user.id} lang={lang} />
+      <div className="pt-12 sm:pt-16">
+        <WorkoutDesignerEnhanced coachId={user.id} lang={lang} />
+      </div>
     </main>
   );
 }
