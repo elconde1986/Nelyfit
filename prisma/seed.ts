@@ -1788,6 +1788,153 @@ async function main() {
         }
       }
     }
+
+    // Create directly assigned workouts for today for client@nelsyfit.demo
+    const demoClient = await prisma.user.findUnique({
+      where: { email: 'client@nelsyfit.demo' },
+      include: { client: true },
+    });
+
+    if (demoClient && demoClient.client) {
+      // Find or create a workout with videos
+      let assignedWorkout = await prisma.workout.findFirst({
+        where: {
+          coachId: { not: null },
+          sections: { some: {} },
+        },
+        include: {
+          sections: {
+            include: {
+              blocks: {
+                include: {
+                  exercises: {
+                    include: {
+                      exercise: {
+                        include: {
+                          coachVideos: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      });
+
+      // If no workout exists, create one with exercises that have videos
+      if (!assignedWorkout) {
+        const coach = await prisma.user.findFirst({
+          where: { email: 'coach@nelsyfit.demo' },
+        });
+
+        if (coach) {
+          // Get some exercises with videos
+          const exercisesWithVideos = await prisma.exercise.findMany({
+            where: {
+              OR: [
+                { defaultVideoUrl: { not: null } },
+                { coachVideos: { some: { coachId: coach.id } } },
+              ],
+            },
+            take: 5,
+          });
+
+          if (exercisesWithVideos.length > 0) {
+            // Create a workout
+            assignedWorkout = await prisma.workout.create({
+              data: {
+                name: 'Full Body Strength',
+                description: 'Complete full body workout with video demonstrations',
+                coachId: coach.id,
+                goal: 'STRENGTH',
+                difficulty: 'INTERMEDIATE',
+                estimatedDuration: 45,
+                sections: {
+                  create: {
+                    name: 'Main Workout',
+                    order: 0,
+                    blocks: {
+                      create: {
+                        type: 'STANDARD_SETS_REPS',
+                        order: 0,
+                        exercises: {
+                          create: exercisesWithVideos.slice(0, 3).map((ex, idx) => ({
+                            name: ex.name,
+                            category: ex.category,
+                            equipment: ex.equipment,
+                            musclesTargeted: ex.musclesTargeted || [],
+                            targetRepsBySet: [10, 10, 8],
+                            targetWeightBySet: [60, 65, 70],
+                            targetRestBySet: [60, 60, 90],
+                            order: idx,
+                            exerciseId: ex.id,
+                          })),
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              include: {
+                sections: {
+                  include: {
+                    blocks: {
+                      include: {
+                        exercises: {
+                          include: {
+                            exercise: {
+                              include: {
+                                coachVideos: true,
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            });
+            console.log('✅ Created workout with videos for seed data');
+          }
+        }
+      }
+
+      // Create a scheduled session for today if it doesn't exist
+      if (assignedWorkout) {
+        const today = new Date();
+        today.setHours(9, 0, 0, 0);
+        const todayEnd = new Date(today);
+        todayEnd.setDate(todayEnd.getDate() + 1);
+
+        const existingAssignedSession = await prisma.workoutSession.findFirst({
+          where: {
+            clientId: demoClient.id,
+            workoutId: assignedWorkout.id,
+            dateTimeStarted: {
+              gte: today,
+              lt: todayEnd,
+            },
+          },
+        });
+
+        if (!existingAssignedSession) {
+          await prisma.workoutSession.create({
+            data: {
+              clientId: demoClient.id,
+              workoutId: assignedWorkout.id,
+              status: 'IN_PROGRESS', // Use IN_PROGRESS for scheduled workouts
+              dateTimeStarted: today,
+            },
+          });
+          console.log('✅ Created scheduled workout session for today (client@nelsyfit.demo)');
+        }
+      }
+    }
   }
 
   console.log('\n🎉 Comprehensive seed completed successfully!');

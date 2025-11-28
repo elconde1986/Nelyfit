@@ -66,37 +66,73 @@ export default async function ClientTodayPage() {
     { id: 'sleep', labelEn: 'Sleep 7+ hours', labelEs: 'Duerme 7+ horas' },
   ];
 
-  // program-based workout of the day (if available)
+  // Check for directly assigned workout session for today (highest priority)
+  let todaySession: any = null;
   let workout = null as any;
   let programDayTitle: string | null = null;
   let programDay = null as any;
-  if (client.currentProgram && client.programStartDate) {
-    const start = startOfDay(client.programStartDate);
-    const diffDays =
-      Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const dayIndex = Math.max(1, diffDays);
-    const day = client.currentProgram.days.find((d) => d.dayIndex === dayIndex);
-    if (day && !day.isRestDay && day.workout) {
-      workout = day.workout;
-      programDayTitle = day.title;
-      programDay = day;
-    }
-  }
 
-  // Check for existing workout session for today
-  let todaySession: any = null;
-  if (programDay) {
-    todaySession = await prisma.workoutSession.findFirst({
-      where: {
-        clientId: client.id,
-        programDayId: programDay.id,
-        dateTimeStarted: {
-          gte: today,
-          lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+  // First, check for directly assigned workouts (scheduled sessions)
+  todaySession = await prisma.workoutSession.findFirst({
+    where: {
+      clientId: user.id, // WorkoutSession.clientId references User.id
+      dateTimeScheduled: {
+        gte: today,
+        lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+      },
+      OR: [
+        { status: 'IN_PROGRESS' },
+        { status: 'COMPLETED' },
+      ],
+    },
+    include: {
+      workout: {
+        include: {
+          sections: {
+            include: {
+              blocks: {
+                include: {
+                  exercises: true,
+                },
+              },
+            },
+          },
         },
       },
-      orderBy: { dateTimeStarted: 'desc' },
-    });
+    },
+    orderBy: { dateTimeStarted: 'desc' },
+  });
+
+  if (todaySession && todaySession.workout) {
+    workout = todaySession.workout;
+    programDayTitle = 'Assigned Workout';
+  } else {
+    // Fall back to program-based workout of the day (if available)
+    if (client.currentProgram && client.programStartDate) {
+      const start = startOfDay(client.programStartDate);
+      const diffDays =
+        Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const dayIndex = Math.max(1, diffDays);
+      const day = client.currentProgram.days.find((d) => d.dayIndex === dayIndex);
+      if (day && !day.isRestDay && day.workout) {
+        workout = day.workout;
+        programDayTitle = day.title;
+        programDay = day;
+
+        // Check for existing workout session for program day
+        todaySession = await prisma.workoutSession.findFirst({
+          where: {
+            clientId: user.id,
+            programDayId: programDay.id,
+            dateTimeStarted: {
+              gte: today,
+              lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+            },
+          },
+          orderBy: { dateTimeStarted: 'desc' },
+        });
+      }
+    }
   }
 
   const gamificationSnapshot = client.gamification

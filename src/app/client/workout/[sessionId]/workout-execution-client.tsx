@@ -39,6 +39,8 @@ export default function WorkoutExecutionClient({
   const [setLogs, setSetLogs] = useState<Record<string, any>>({});
   const [showPainPrompt, setShowPainPrompt] = useState<string | null>(null);
   const [painNote, setPainNote] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Initialize set logs from existing data
   useEffect(() => {
@@ -56,6 +58,42 @@ export default function WorkoutExecutionClient({
     setSetLogs(logs);
   }, [session.setLogs]);
 
+  // Navigation guard to prevent losing progress
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && !isNavigating) {
+        e.preventDefault();
+        e.returnValue = lang === 'en' 
+          ? 'You have unsaved changes. Are you sure you want to leave?' 
+          : 'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?';
+        return e.returnValue;
+      }
+    };
+
+    const handleRouteChange = () => {
+      if (hasUnsavedChanges && !isNavigating) {
+        const confirmed = window.confirm(
+          lang === 'en'
+            ? 'You have unsaved changes. Are you sure you want to leave?'
+            : 'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?'
+        );
+        if (!confirmed) {
+          router.push(`/client/workout/${session.id}`);
+          return false;
+        }
+      }
+      setIsNavigating(true);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    // Note: Next.js router events would need router.events, but we'll use a custom approach
+    // For now, we'll rely on beforeunload and manual navigation checks
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges, isNavigating, lang, router, session.id]);
+
   const updateSetLog = async (
     exerciseId: string,
     setNumber: number,
@@ -67,6 +105,7 @@ export default function WorkoutExecutionClient({
     const updatedLog = { ...currentLog, [field]: value };
 
     setSetLogs({ ...setLogs, [key]: updatedLog });
+    setHasUnsavedChanges(true);
 
     // Autosave
     try {
@@ -80,6 +119,7 @@ export default function WorkoutExecutionClient({
         feelingEmoji: updatedLog.feelingEmoji,
         feelingNote: updatedLog.feelingNote,
       });
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Error saving set log:', error);
     }
@@ -168,11 +208,24 @@ export default function WorkoutExecutionClient({
               {lang === 'en' ? 'Log your sets as you complete them' : 'Registra tus series mientras las completas'}
             </p>
           </div>
-          <Button asChild variant="secondary" size="sm">
-            <Link href="/client/today">
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              {t.back}
-            </Link>
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={() => {
+              if (hasUnsavedChanges) {
+                const confirmed = window.confirm(
+                  lang === 'en'
+                    ? 'You have unsaved changes. Are you sure you want to leave?'
+                    : 'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?'
+                );
+                if (!confirmed) return;
+              }
+              setIsNavigating(true);
+              router.push('/client/today');
+            }}
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            {t.back}
           </Button>
         </div>
 

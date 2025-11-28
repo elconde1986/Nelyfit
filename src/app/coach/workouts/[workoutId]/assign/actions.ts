@@ -66,10 +66,46 @@ export async function assignWorkoutToClient(data: {
       }
     }
 
-    // Create scheduled workout sessions
-    // For now, we'll create a simple assignment record
-    // In a full implementation, you'd create WorkoutSession records with scheduled dates
-    // or use a separate ScheduledWorkout model
+    // Get the client's user ID (WorkoutSession.clientId references User.id)
+    const clientUser = await prisma.user.findUnique({
+      where: { id: data.clientId },
+      include: { client: true },
+    });
+
+    if (!clientUser || !clientUser.client) {
+      return { success: false, error: 'Client user not found' };
+    }
+
+    // Create WorkoutSession records for each date
+    const sessions = [];
+    for (const date of dates) {
+      // Check if session already exists for this date
+      const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const dateEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+      const existingSession = await prisma.workoutSession.findFirst({
+        where: {
+          clientId: clientUser.id,
+          workoutId: workout.id,
+          dateTimeStarted: {
+            gte: dateStart,
+            lt: dateEnd,
+          },
+        },
+      });
+
+      if (!existingSession) {
+        const scheduledDateTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 9, 0, 0);
+        const session = await prisma.workoutSession.create({
+          data: {
+            clientId: clientUser.id,
+            workoutId: workout.id,
+            status: 'IN_PROGRESS', // Use IN_PROGRESS for scheduled workouts that haven't started yet
+            dateTimeStarted: scheduledDateTime, // Use dateTimeStarted for scheduled time
+          },
+        });
+        sessions.push(session);
+      }
+    }
 
     // Create notification if requested
     if (data.sendNotification) {
@@ -83,7 +119,7 @@ export async function assignWorkoutToClient(data: {
       });
     }
 
-    return { success: true };
+    return { success: true, sessionsCreated: sessions.length };
   } catch (error: any) {
     console.error('Error assigning workout to client:', error);
     return { success: false, error: error.message || 'Failed to assign workout' };
