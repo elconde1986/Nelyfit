@@ -76,7 +76,7 @@ export default async function ClientTodayPage() {
   todaySession = await prisma.workoutSession.findFirst({
     where: {
       clientId: user.id, // WorkoutSession.clientId references User.id
-      dateTimeScheduled: {
+      dateTimeStarted: {
         gte: today,
         lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
       },
