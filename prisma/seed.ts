@@ -757,6 +757,10 @@ async function main() {
   // Create active subscription for client 3
   const premiumClient = createdClients[2];
   // Delete existing subscription for this user first
+  // Delete existing subscriptions and payments for this user
+  await prisma.payment.deleteMany({
+    where: { userId: premiumClient.user.id },
+  });
   await prisma.subscription.deleteMany({
     where: { userId: premiumClient.user.id },
   });
@@ -777,8 +781,8 @@ async function main() {
             amount: 2999,
             currency: 'usd',
             status: 'SUCCEEDED',
-            stripePaymentIntentId: 'pi_test_123',
-            stripeInvoiceId: 'in_test_123',
+            stripePaymentIntentId: `pi_test_${Date.now()}_${premiumClient.user.id}`, // Unique ID
+            stripeInvoiceId: `in_test_${Date.now()}_${premiumClient.user.id}`, // Unique ID
           },
         ],
       },
