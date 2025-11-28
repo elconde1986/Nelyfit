@@ -309,54 +309,98 @@ export default function WorkoutDesignerClient({ coachId, lang }: { coachId: stri
       return;
     }
 
+    // Validate that we have at least one section with at least one block with at least one exercise
+    const hasValidStructure = sections.some(section => 
+      section.blocks.some(block => 
+        block.exercises.length > 0 && block.exercises.some(ex => ex.name.trim() && ex.targetRepsBySet.length > 0)
+      )
+    );
+
+    if (!hasValidStructure) {
+      alert(lang === 'en' 
+        ? 'Please add at least one exercise to your workout before saving.' 
+        : 'Por favor agrega al menos un ejercicio a tu entrenamiento antes de guardar.');
+      return;
+    }
+
     setSaving(true);
     try {
+      // Filter out empty sections/blocks and ensure exercises have valid data
+      const validSections = sections
+        .map(s => ({
+          name: s.name,
+          order: s.order,
+          notes: s.notes,
+          blocks: s.blocks
+            .map(b => ({
+              type: b.type,
+              title: b.title,
+              instructions: b.instructions,
+              rounds: b.rounds,
+              restBetweenRounds: b.restBetweenRounds,
+              estimatedTime: b.estimatedTime,
+              order: b.order,
+              exercises: b.exercises
+                .filter(e => e.name.trim() && e.targetRepsBySet.length > 0)
+                .map((e, idx) => ({
+                  name: e.name.trim(),
+                  category: e.category,
+                  equipment: e.equipment,
+                  notes: e.notes,
+                  coachNotes: e.coachNotes,
+                  targetRepsBySet: e.targetRepsBySet.filter(r => r > 0),
+                  targetWeightBySet: e.targetWeightBySet?.filter((w, i) => e.targetRepsBySet[i] > 0),
+                  targetRestBySet: e.targetRestBySet,
+                  order: idx,
+                })),
+            }))
+            .filter(b => b.exercises.length > 0)
+            .map((b, idx) => ({ ...b, order: idx })),
+        }))
+        .filter(s => s.blocks.length > 0)
+        .map((s, idx) => ({ ...s, order: idx }));
+
+      if (validSections.length === 0) {
+        alert(lang === 'en' 
+          ? 'Please add at least one exercise to your workout before saving.' 
+          : 'Por favor agrega al menos un ejercicio a tu entrenamiento antes de guardar.');
+        setSaving(false);
+        return;
+      }
+
+      console.log('Saving workout with data:', {
+        name: workoutName,
+        sectionsCount: validSections.length,
+        totalExercises: validSections.reduce((sum, s) => 
+          sum + s.blocks.reduce((blockSum, b) => blockSum + b.exercises.length, 0), 0
+        ),
+      });
+
       const result = await createWorkout({
         name: workoutName,
-        description,
+        description: description || undefined,
         goal: goal || undefined,
         difficulty: difficulty || undefined,
         trainingEnvironment: environment || undefined,
         primaryBodyFocus: primaryBodyFocus || undefined,
         estimatedDuration,
-        sessionTypes,
-        tags,
+        sessionTypes: sessionTypes.length > 0 ? sessionTypes : undefined,
+        tags: tags.length > 0 ? tags : undefined,
         visibility,
-        sections: sections.map(s => ({
-          name: s.name,
-          order: s.order,
-          notes: s.notes,
-          blocks: s.blocks.map(b => ({
-            type: b.type,
-            title: b.title,
-            instructions: b.instructions,
-            rounds: b.rounds,
-            restBetweenRounds: b.restBetweenRounds,
-            estimatedTime: b.estimatedTime,
-            order: b.order,
-            exercises: b.exercises.map(e => ({
-              name: e.name,
-              category: e.category,
-              equipment: e.equipment,
-              notes: e.notes,
-              coachNotes: e.coachNotes,
-              targetRepsBySet: e.targetRepsBySet,
-              targetWeightBySet: e.targetWeightBySet,
-              targetRestBySet: e.targetRestBySet,
-              order: e.order,
-            })),
-          })),
-        })),
+        sections: validSections,
       });
 
       if (result.success) {
         router.push(`/coach/workouts/${result.workoutId}`);
       } else {
+        console.error('Save failed:', result.error);
         alert(result.error || (lang === 'en' ? 'Failed to save workout' : 'Error al guardar entrenamiento'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving workout:', error);
-      alert(lang === 'en' ? 'An error occurred' : 'Ocurrió un error');
+      alert(lang === 'en' 
+        ? `An error occurred: ${error.message || 'Unknown error'}` 
+        : `Ocurrió un error: ${error.message || 'Error desconocido'}`);
     } finally {
       setSaving(false);
     }
