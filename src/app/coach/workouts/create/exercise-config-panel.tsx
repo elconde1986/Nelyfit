@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2 } from 'lucide-react';
+import { X, Save, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -42,11 +42,13 @@ export default function ExerciseConfigPanel({
   exercise,
   onUpdate,
   onClose,
+  onSwap,
   lang,
 }: {
   exercise: WorkoutExercise;
   onUpdate: (exercise: WorkoutExercise) => void;
   onClose: () => void;
+  onSwap?: () => void;
   lang: Lang;
 }) {
   const [config, setConfig] = useState<WorkoutExercise>(exercise);
@@ -106,11 +108,24 @@ export default function ExerciseConfigPanel({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-        <h3 className="font-bold text-lg">{config.name}</h3>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="w-4 h-4" />
-        </Button>
+      <div className="p-4 border-b border-slate-800">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-lg">{config.name}</h3>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        {onSwap && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onSwap}
+            className="w-full text-xs"
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />
+            {lang === 'en' ? 'Swap Exercise from Library' : 'Cambiar Ejercicio de Biblioteca'}
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

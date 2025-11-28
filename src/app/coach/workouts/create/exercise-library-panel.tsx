@@ -55,6 +55,7 @@ export default function ExerciseLibraryPanel({
   onAddExercise,
   targetSectionId,
   onTargetSectionChange,
+  swapMode = false,
   lang,
 }: {
   exercises: Exercise[];
@@ -70,6 +71,7 @@ export default function ExerciseLibraryPanel({
   onAddExercise: (exercise: Exercise) => void;
   targetSectionId?: string | null;
   onTargetSectionChange?: (sectionId: string | null) => void;
+  swapMode?: boolean;
   lang: Lang;
 }) {
   const [draggedLibraryExercise, setDraggedLibraryExercise] = useState<Exercise | null>(null);
@@ -95,6 +97,15 @@ export default function ExerciseLibraryPanel({
             {lang === 'en' ? 'Exercise Library' : 'Biblioteca de Ejercicios'}
           </h2>
         </div>
+        {swapMode && (
+          <div className="mb-3 p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50">
+            <p className="text-xs text-emerald-300">
+              {lang === 'en' 
+                ? 'Select an exercise to replace the current one' 
+                : 'Selecciona un ejercicio para reemplazar el actual'}
+            </p>
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative mb-3">

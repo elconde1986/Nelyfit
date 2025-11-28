@@ -191,6 +191,11 @@ export default function WorkoutDesignerEnhanced({
   const [selectedExercise, setSelectedExercise] = useState<WorkoutExercise | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [targetSectionId, setTargetSectionId] = useState<string | null>(null); // For adding exercises to specific section
+  
+  // Swap mode state
+  const [swapMode, setSwapMode] = useState(false);
+  const [swapTargetExerciseId, setSwapTargetExerciseId] = useState<string | null>(null);
+  const [swapTargetSectionId, setSwapTargetSectionId] = useState<string | null>(null);
 
   // Fetch exercises
   const fetchExercises = useCallback(async () => {
@@ -289,6 +294,70 @@ export default function WorkoutDesignerEnhanced({
     if (selectedExercise?.id === exerciseId) {
       setSelectedExercise(null);
       setSelectedSectionId(null);
+    }
+  };
+
+  // Swap exercise with one from library
+  const handleSwapExercise = () => {
+    if (!selectedExercise || !selectedSectionId) return;
+    
+    // Clear selection to show library, user can click an exercise to swap
+    setSelectedExercise(null);
+    setSelectedSectionId(null);
+    // Set a flag that we're in swap mode
+    setSwapMode(true);
+    setSwapTargetExerciseId(selectedExercise.id);
+    setSwapTargetSectionId(selectedSectionId);
+  };
+
+  // Handle exercise selection (normal add or swap)
+  const handleExerciseSelect = (exercise: Exercise) => {
+    if (swapMode && swapTargetExerciseId && swapTargetSectionId) {
+      // Swap mode: replace the target exercise
+      const section = sections.find(s => s.id === swapTargetSectionId);
+      if (!section) return;
+
+      const oldExercise = section.exercises.find(e => e.id === swapTargetExerciseId);
+      if (!oldExercise) return;
+
+      const newExercise: WorkoutExercise = {
+        ...oldExercise,
+        id: oldExercise.id, // Keep same ID
+        exerciseId: exercise.id,
+        exercise,
+        name: exercise.name,
+        category: exercise.category || oldExercise.category,
+        equipment: exercise.equipment || oldExercise.equipment,
+        musclesTargeted: exercise.musclesTargeted || oldExercise.musclesTargeted,
+      };
+
+      setSections(sections.map(s =>
+        s.id === swapTargetSectionId
+          ? {
+              ...s,
+              exercises: s.exercises.map(e =>
+                e.id === swapTargetExerciseId ? newExercise : e
+              ),
+            }
+          : s
+      ));
+
+      // Select the swapped exercise
+      setSelectedExercise(newExercise);
+      setSelectedSectionId(swapTargetSectionId);
+      
+      // Clear swap mode
+      setSwapMode(false);
+      setSwapTargetExerciseId(null);
+      setSwapTargetSectionId(null);
+    } else {
+      // Normal add mode
+      const targetSection = targetSectionId 
+        ? sections.find(s => s.id === targetSectionId)
+        : sections.find(s => s.type === 'MAIN') || sections[0];
+      if (targetSection) {
+        handleAddExercise(exercise, targetSection.id);
+      }
     }
   };
 
@@ -573,17 +642,10 @@ export default function WorkoutDesignerEnhanced({
             onSortChange={setSortBy}
             showFilters={showFilters}
             onToggleFilters={() => setShowFilters(!showFilters)}
-            onAddExercise={(exercise) => {
-              // Use targetSectionId if set, otherwise default to main section
-              const targetSection = targetSectionId 
-                ? sections.find(s => s.id === targetSectionId)
-                : sections.find(s => s.type === 'MAIN') || sections[0];
-              if (targetSection) {
-                handleAddExercise(exercise, targetSection.id);
-              }
-            }}
+            onAddExercise={handleExerciseSelect}
             targetSectionId={targetSectionId}
             onTargetSectionChange={setTargetSectionId}
+            swapMode={swapMode}
             lang={lang}
           />
         </div>
@@ -593,7 +655,13 @@ export default function WorkoutDesignerEnhanced({
           <WorkoutBuilderPanel
             sections={sections}
             onSectionsChange={setSections}
-            onAddExercise={(exercise, sectionId) => handleAddExercise(exercise, sectionId)}
+            onAddExercise={(exercise, sectionId) => {
+              if (swapMode && swapTargetExerciseId && swapTargetSectionId) {
+                handleExerciseSelect(exercise);
+              } else {
+                handleAddExercise(exercise, sectionId);
+              }
+            }}
             onRemoveExercise={handleRemoveExercise}
             onSelectExercise={(exercise, sectionId) => {
               setSelectedExercise(exercise);
@@ -617,7 +685,11 @@ export default function WorkoutDesignerEnhanced({
               onClose={() => {
                 setSelectedExercise(null);
                 setSelectedSectionId(null);
+                setSwapMode(false);
+                setSwapTargetExerciseId(null);
+                setSwapTargetSectionId(null);
               }}
+              onSwap={handleSwapExercise}
               lang={lang}
             />
           ) : (

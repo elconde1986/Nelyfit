@@ -334,31 +334,28 @@ export default function WorkoutBuilderPanel({
                             )}
                           </div>
                           <div className="text-xs text-slate-400 space-y-1">
-                            {exercise.sets > 0 && (
-                              <div>
-                                {exercise.sets} {lang === 'en' ? 'sets' : 'series'} ×{' '}
-                                {exercise.reps
-                                  ? `${exercise.reps} ${lang === 'en' ? 'reps' : 'repeticiones'}`
-                                  : exercise.timeSeconds
-                                  ? `${exercise.timeSeconds}s`
-                                  : exercise.distance
-                                  ? `${exercise.distance}m`
-                                  : ''}
+                            {exercise.targetRepsBySet && exercise.targetRepsBySet.length > 0 && (
+                              <div className="font-medium text-slate-300">
+                                {exercise.targetRepsBySet.length} {lang === 'en' ? 'sets' : 'series'}: {exercise.targetRepsBySet.join(' × ')} {lang === 'en' ? 'reps' : 'rep'}
+                                {exercise.targetWeightBySet && exercise.targetWeightBySet.length > 0 && (
+                                  <span className="ml-2">
+                                    @ {exercise.targetWeightBySet.filter(w => w !== null).length > 0 
+                                      ? exercise.targetWeightBySet.filter(w => w !== null).join(' / ') + 'kg'
+                                      : ''}
+                                  </span>
+                                )}
                               </div>
                             )}
-                            {exercise.restSeconds && (
+                            {exercise.targetRestBySet && exercise.targetRestBySet.length > 0 && (
                               <div>
-                                {lang === 'en' ? 'Rest' : 'Descanso'}: {exercise.restSeconds}s
+                                {lang === 'en' ? 'Rest' : 'Descanso'}: {exercise.targetRestBySet.join('s / ')}s
                               </div>
                             )}
-                            {exercise.loadType && exercise.loadValue && (
-                              <div>
-                                {exercise.loadType === 'WEIGHT' && `${exercise.loadValue}kg`}
-                                {exercise.loadType === 'RPE' && `RPE ${exercise.loadValue}`}
-                                {exercise.loadType === 'PERCENT' && `${exercise.loadValue}% 1RM`}
-                                {exercise.loadType === 'BODYWEIGHT' && lang === 'en' ? 'Bodyweight' : 'Peso Corporal'}
+                            {!exercise.targetRepsBySet || exercise.targetRepsBySet.length === 0 ? (
+                              <div className="text-slate-500 italic">
+                                {lang === 'en' ? 'Click to configure' : 'Haz clic para configurar'}
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </div>
