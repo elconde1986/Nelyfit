@@ -1369,6 +1369,212 @@ async function main() {
   }
   console.log('✅ Additional workout sessions created for testing');
 
+  // ============================================
+  // CREATE COMPREHENSIVE TEST DATA FOR WORKOUT EXECUTION SCREEN
+  // ============================================
+  if (mainClientUser && structuredWorkout) {
+    // Get the client's current program
+    const clientRecord = await prisma.client.findUnique({
+      where: { id: mainClient.id },
+      include: {
+        currentProgram: {
+          include: {
+            days: {
+              orderBy: { dayIndex: 'asc' },
+              include: { workout: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (clientRecord?.currentProgram) {
+      const program = clientRecord.currentProgram;
+      
+      // Find today's workout day
+      const today = new Date();
+      const programStart = clientRecord.programStartDate 
+        ? new Date(clientRecord.programStartDate)
+        : new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000); // Default to 7 days ago
+      
+      programStart.setHours(0, 0, 0, 0);
+      const daysSinceStart = Math.floor((today.getTime() - programStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const todayProgramDay = program.days.find((d) => d.dayIndex === daysSinceStart && !d.isRestDay);
+
+      if (todayProgramDay && todayProgramDay.workout) {
+        // Create a completed session from 3 days ago with FULL set logs for ALL exercises
+        const threeDaysAgo = new Date(today);
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        threeDaysAgo.setHours(8, 0, 0, 0);
+
+        const previousDayIndex = Math.max(1, daysSinceStart - 3);
+        const previousProgramDay = program.days.find((d) => d.dayIndex === previousDayIndex && !d.isRestDay);
+
+        if (previousProgramDay && previousProgramDay.workout) {
+          // Check if session already exists
+          const existingPreviousSession = await prisma.workoutSession.findFirst({
+            where: {
+              clientId: mainClientUser.id,
+              workoutId: previousProgramDay.workout.id,
+              dateTimeStarted: {
+                gte: new Date(threeDaysAgo.getTime() - 12 * 60 * 60 * 1000),
+                lt: new Date(threeDaysAgo.getTime() + 12 * 60 * 60 * 1000),
+              },
+            },
+          });
+
+          if (!existingPreviousSession) {
+            const previousSession = await prisma.workoutSession.create({
+              data: {
+                clientId: mainClientUser.id,
+                workoutId: previousProgramDay.workout.id,
+                programDayId: previousProgramDay.id,
+                dateTimeStarted: threeDaysAgo,
+                dateTimeCompleted: new Date(threeDaysAgo.getTime() + 50 * 60 * 1000), // 50 min
+                status: 'COMPLETED',
+                clientNotes: 'Previous session for testing Previous column',
+              },
+            });
+
+            // Get ALL exercises from the workout
+            const allExercises = await prisma.workoutExercise.findMany({
+              where: {
+                block: {
+                  section: {
+                    workoutId: previousProgramDay.workout.id,
+                  },
+                },
+              },
+              orderBy: [
+                { block: { section: { order: 'asc' } } },
+                { block: { order: 'asc' } },
+                { order: 'asc' },
+              ],
+            });
+
+            // Create set logs for ALL exercises
+            for (const exercise of allExercises) {
+              const targetRepsArray = Array.isArray(exercise.targetRepsBySet)
+                ? (exercise.targetRepsBySet as number[])
+                : typeof exercise.targetRepsBySet === 'number'
+                ? [exercise.targetRepsBySet]
+                : [8, 8, 6];
+
+              const targetWeightsArray = Array.isArray(exercise.targetWeightBySet)
+                ? (exercise.targetWeightBySet as number[])
+                : exercise.targetWeightBySet && typeof exercise.targetWeightBySet === 'number'
+                ? [exercise.targetWeightBySet]
+                : [60, 65, 70];
+
+              for (let i = 0; i < targetRepsArray.length; i++) {
+                const targetRep = typeof targetRepsArray[i] === 'number' ? targetRepsArray[i] : 8;
+                const targetWeight = targetWeightsArray[i] as number || (60 + i * 5);
+                
+                await prisma.exerciseSetLog.create({
+                  data: {
+                    sessionId: previousSession.id,
+                    workoutExerciseId: exercise.id,
+                    exerciseName: exercise.name,
+                    setNumber: i + 1,
+                    targetReps: targetRep,
+                    targetWeight,
+                    targetUnit: 'kg',
+                    actualReps: targetRep,
+                    actualWeight: targetWeight,
+                    actualUnit: 'kg',
+                    feelingCode: i === targetRepsArray.length - 1 ? 'HARD' : 'GOOD_CHALLENGE',
+                    feelingEmoji: i === targetRepsArray.length - 1 ? '😓' : '🙂',
+                  },
+                });
+              }
+            }
+            console.log(`✅ Created previous session with ${allExercises.length} exercises for testing Previous column`);
+          }
+        }
+
+        // Create an IN_PROGRESS session for today (if it doesn't exist)
+        const existingInProgress = await prisma.workoutSession.findFirst({
+          where: {
+            clientId: mainClientUser.id,
+            workoutId: todayProgramDay.workout.id,
+            programDayId: todayProgramDay.id,
+            status: 'IN_PROGRESS',
+            dateTimeStarted: {
+              gte: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+            },
+          },
+        });
+
+        if (!existingInProgress) {
+          const inProgressSession = await prisma.workoutSession.create({
+            data: {
+              clientId: mainClientUser.id,
+              workoutId: todayProgramDay.workout.id,
+              programDayId: todayProgramDay.id,
+              dateTimeStarted: new Date(today.getTime() - 10 * 60 * 1000), // Started 10 minutes ago
+              status: 'IN_PROGRESS',
+            },
+          });
+
+          // Pre-seed some set logs (partially completed)
+          const todayExercises = await prisma.workoutExercise.findMany({
+            where: {
+              block: {
+                section: {
+                  workoutId: todayProgramDay.workout.id,
+                },
+              },
+            },
+            orderBy: [
+              { block: { section: { order: 'asc' } } },
+              { block: { order: 'asc' } },
+              { order: 'asc' },
+            ],
+            take: 2, // Pre-seed first 2 exercises
+          });
+
+          for (const exercise of todayExercises) {
+            const targetRepsArray = Array.isArray(exercise.targetRepsBySet)
+              ? (exercise.targetRepsBySet as number[])
+              : typeof exercise.targetRepsBySet === 'number'
+              ? [exercise.targetRepsBySet]
+              : [8, 8, 6];
+
+            const targetWeightsArray = Array.isArray(exercise.targetWeightBySet)
+              ? (exercise.targetWeightBySet as number[])
+              : exercise.targetWeightBySet && typeof exercise.targetWeightBySet === 'number'
+              ? [exercise.targetWeightBySet]
+              : [60, 65, 70];
+
+            // Create logs for first 2 sets only (partially completed)
+            for (let i = 0; i < Math.min(2, targetRepsArray.length); i++) {
+              const targetRep = typeof targetRepsArray[i] === 'number' ? targetRepsArray[i] : 8;
+              const targetWeight = targetWeightsArray[i] as number || (60 + i * 5);
+
+              await prisma.exerciseSetLog.create({
+                data: {
+                  sessionId: inProgressSession.id,
+                  workoutExerciseId: exercise.id,
+                  exerciseName: exercise.name,
+                  setNumber: i + 1,
+                  targetReps: targetRep,
+                  targetWeight,
+                  targetUnit: 'kg',
+                  actualReps: targetRep,
+                  actualWeight: targetWeight,
+                  actualUnit: 'kg',
+                  feelingCode: 'GOOD_CHALLENGE',
+                  feelingEmoji: '🙂',
+                },
+              });
+            }
+          }
+          console.log('✅ Created IN_PROGRESS session for today (can be resumed)');
+        }
+      }
+    }
+  }
+
   console.log('\n🎉 Comprehensive seed completed successfully!');
   console.log('\n📋 Test Accounts:');
   console.log('  Admin: admin@nelsyfit.demo / demo');
