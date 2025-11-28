@@ -88,11 +88,55 @@ export default function WorkoutExecutionNew({
   const [restTimers, setRestTimers] = useState<Record<string, RestTimer>>({});
   const [editingSet, setEditingSet] = useState<{ exerciseId: string; setIndex: number } | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  // Exercise library search state
+  const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
+  const [exerciseSearchResults, setExerciseSearchResults] = useState<any[]>([]);
+  const [loadingExercises, setLoadingExercises] = useState(false);
+  const [exerciseSearchFilters, setExerciseSearchFilters] = useState({
+    modality: '',
+    bodyRegion: '',
+    equipment: '',
+    difficulty: '',
+  });
+
+  // Search exercises function
+  const searchExercises = useCallback(async (query: string, filters?: typeof exerciseSearchFilters) => {
+    const activeFilters = filters || exerciseSearchFilters;
+    setLoadingExercises(true);
+    try {
+      const params = new URLSearchParams();
+      if (query) params.append('search', query);
+      if (activeFilters.modality) params.append('modality', activeFilters.modality);
+      if (activeFilters.bodyRegion) params.append('bodyRegion', activeFilters.bodyRegion);
+      if (activeFilters.equipment) params.append('equipment', activeFilters.equipment);
+      if (activeFilters.difficulty) params.append('difficulty', activeFilters.difficulty);
+      params.append('library', 'true'); // Only show library exercises
+
+      const response = await fetch(`/api/exercises?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setExerciseSearchResults(data.exercises || []);
+      }
+    } catch (error) {
+      console.error('Error searching exercises:', error);
+      setExerciseSearchResults([]);
+    } finally {
+      setLoadingExercises(false);
+    }
+  }, [exerciseSearchFilters]);
 
   // Load session view
   useEffect(() => {
     loadSessionView();
   }, [sessionId]);
+
+  // Load exercises when modal opens
+  useEffect(() => {
+    if (showInsertExercise && exerciseSearchQuery === '') {
+      searchExercises(''); // Load all exercises initially
+    }
+  }, [showInsertExercise, searchExercises, exerciseSearchQuery]);
 
   // Timer effect
   useEffect(() => {
@@ -296,6 +340,22 @@ export default function WorkoutExecutionNew({
         return ex;
       }),
     });
+  };
+
+
+  const handleInsertExercise = async (exercise: any) => {
+    // Note: This would require a server action to add an exercise to the workout session
+    // For now, we'll just show a notification that this feature needs backend support
+    setNotification({
+      message: lang === 'en' 
+        ? `Exercise "${exercise.name}" selected. Backend integration needed.` 
+        : `Ejercicio "${exercise.name}" seleccionado. Se necesita integración del backend.`,
+      type: 'success'
+    });
+    setTimeout(() => setNotification(null), 3000);
+    setShowInsertExercise(false);
+    setExerciseSearchQuery('');
+    setExerciseSearchResults([]);
   };
 
   const startRestTimer = (exerciseId: string, restSeconds: number) => {
@@ -570,24 +630,143 @@ export default function WorkoutExecutionNew({
         </div>
       )}
 
-      {/* Insert Exercise Modal - Placeholder */}
+      {/* Insert Exercise Modal */}
       {showInsertExercise && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="max-w-md w-full mx-4 bg-slate-900 border-slate-800 max-h-[80vh] overflow-y-auto">
-            <CardContent className="p-6">
+          <Card className="max-w-2xl w-full mx-4 bg-slate-900 border-slate-800 max-h-[80vh] flex flex-col">
+            <CardContent className="p-6 flex flex-col flex-1 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold">{lang === 'en' ? 'Insert Exercise' : 'Insertar Ejercicio'}</h3>
-                <button onClick={() => setShowInsertExercise(false)} className="text-slate-400 hover:text-slate-200">
+                <button onClick={() => {
+                  setShowInsertExercise(false);
+                  setExerciseSearchQuery('');
+                  setExerciseSearchResults([]);
+                }} className="text-slate-400 hover:text-slate-200">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-slate-400 text-sm mb-4">
-                {lang === 'en' ? 'Exercise library search coming soon...' : 'Búsqueda de ejercicios próximamente...'}
-              </p>
+              
+              {/* Search Bar */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={exerciseSearchQuery}
+                  onChange={(e) => {
+                    setExerciseSearchQuery(e.target.value);
+                    searchExercises(e.target.value);
+                  }}
+                  placeholder={lang === 'en' ? 'Search exercises...' : 'Buscar ejercicios...'}
+                  className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              {/* Filters */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                <select
+                  value={exerciseSearchFilters.modality}
+                  onChange={(e) => {
+                    const newFilters = { ...exerciseSearchFilters, modality: e.target.value };
+                    setExerciseSearchFilters(newFilters);
+                    searchExercises(exerciseSearchQuery, newFilters);
+                  }}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+                >
+                  <option value="">{lang === 'en' ? 'All Types' : 'Todos'}</option>
+                  <option value="strength">{lang === 'en' ? 'Strength' : 'Fuerza'}</option>
+                  <option value="cardio">{lang === 'en' ? 'Cardio' : 'Cardio'}</option>
+                  <option value="mobility">{lang === 'en' ? 'Mobility' : 'Movilidad'}</option>
+                  <option value="core">{lang === 'en' ? 'Core' : 'Core'}</option>
+                </select>
+                <select
+                  value={exerciseSearchFilters.bodyRegion}
+                  onChange={(e) => {
+                    const newFilters = { ...exerciseSearchFilters, bodyRegion: e.target.value };
+                    setExerciseSearchFilters(newFilters);
+                    searchExercises(exerciseSearchQuery, newFilters);
+                  }}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+                >
+                  <option value="">{lang === 'en' ? 'All Regions' : 'Todas'}</option>
+                  <option value="upper">{lang === 'en' ? 'Upper' : 'Superior'}</option>
+                  <option value="lower">{lang === 'en' ? 'Lower' : 'Inferior'}</option>
+                  <option value="core">{lang === 'en' ? 'Core' : 'Core'}</option>
+                  <option value="full">{lang === 'en' ? 'Full Body' : 'Cuerpo Completo'}</option>
+                </select>
+                <select
+                  value={exerciseSearchFilters.equipment}
+                  onChange={(e) => {
+                    const newFilters = { ...exerciseSearchFilters, equipment: e.target.value };
+                    setExerciseSearchFilters(newFilters);
+                    searchExercises(exerciseSearchQuery, newFilters);
+                  }}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+                >
+                  <option value="">{lang === 'en' ? 'All Equipment' : 'Todo'}</option>
+                  <option value="bodyweight">{lang === 'en' ? 'Bodyweight' : 'Peso Corporal'}</option>
+                  <option value="dumbbell">{lang === 'en' ? 'Dumbbell' : 'Mancuerna'}</option>
+                  <option value="barbell">{lang === 'en' ? 'Barbell' : 'Barra'}</option>
+                  <option value="machine">{lang === 'en' ? 'Machine' : 'Máquina'}</option>
+                </select>
+                <select
+                  value={exerciseSearchFilters.difficulty}
+                  onChange={(e) => {
+                    const newFilters = { ...exerciseSearchFilters, difficulty: e.target.value };
+                    setExerciseSearchFilters(newFilters);
+                    searchExercises(exerciseSearchQuery, newFilters);
+                  }}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+                >
+                  <option value="">{lang === 'en' ? 'All Levels' : 'Todos'}</option>
+                  <option value="beginner">{lang === 'en' ? 'Beginner' : 'Principiante'}</option>
+                  <option value="intermediate">{lang === 'en' ? 'Intermediate' : 'Intermedio'}</option>
+                  <option value="advanced">{lang === 'en' ? 'Advanced' : 'Avanzado'}</option>
+                </select>
+              </div>
+
+              {/* Exercise Results */}
+              <div className="flex-1 overflow-y-auto space-y-2">
+                {loadingExercises ? (
+                  <div className="text-center py-8 text-slate-400">
+                    {lang === 'en' ? 'Loading exercises...' : 'Cargando ejercicios...'}
+                  </div>
+                ) : exerciseSearchResults.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400">
+                    {lang === 'en' ? 'No exercises found. Try a different search.' : 'No se encontraron ejercicios. Intenta otra búsqueda.'}
+                  </div>
+                ) : (
+                  exerciseSearchResults.map((exercise) => (
+                    <div
+                      key={exercise.id}
+                      onClick={() => handleInsertExercise(exercise)}
+                      className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold text-slate-50">{exercise.name}</h4>
+                          <div className="flex gap-2 mt-1 flex-wrap">
+                            {exercise.category && (
+                              <span className="text-xs text-slate-400">{exercise.category}</span>
+                            )}
+                            {exercise.equipment && (
+                              <span className="text-xs text-slate-400">• {exercise.equipment}</span>
+                            )}
+                          </div>
+                        </div>
+                        <Plus className="w-5 h-5 text-emerald-400" />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
               <Button
-                onClick={() => setShowInsertExercise(false)}
+                onClick={() => {
+                  setShowInsertExercise(false);
+                  setExerciseSearchQuery('');
+                  setExerciseSearchResults([]);
+                }}
                 variant="outline"
-                className="w-full border-slate-700"
+                className="w-full border-slate-700 mt-4"
               >
                 {lang === 'en' ? 'Close' : 'Cerrar'}
               </Button>

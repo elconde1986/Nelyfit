@@ -143,7 +143,11 @@ export async function assignWorkoutToProgram(data: {
       include: { coach: true },
     });
 
-    if (!program || program.coachId !== user.id) {
+    if (!program) {
+      return { success: false, error: 'Program not found' };
+    }
+
+    if (program.coachId !== user.id && user.role !== 'ADMIN') {
       return { success: false, error: 'Program not found or unauthorized' };
     }
 
@@ -188,6 +192,14 @@ export async function assignWorkoutToProgram(data: {
     return { success: true };
   } catch (error: any) {
     console.error('Error assigning workout to program:', error);
+    console.error('Error details:', {
+      workoutId: data.workoutId,
+      programId: data.programId,
+      dayIndex: data.dayIndex,
+      userId: user.id,
+      errorMessage: error.message,
+      errorCode: error.code,
+    });
     return { success: false, error: error.message || 'Failed to assign workout' };
   }
 }
