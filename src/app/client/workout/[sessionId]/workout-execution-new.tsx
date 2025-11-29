@@ -179,8 +179,24 @@ export default function WorkoutExecutionNew({
   const loadSessionView = async () => {
     try {
       const response = await fetch(`/api/client/workout-sessions/${sessionId}/view`);
-      if (!response.ok) throw new Error('Failed to load session');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to load session');
+      }
       const data = await response.json();
+      console.log('Session view data:', data);
+      console.log('Exercises count:', data.exercises?.length || 0);
+      
+      if (!data.exercises || data.exercises.length === 0) {
+        console.warn('No exercises found in session view');
+        setNotification({ 
+          message: lang === 'en' 
+            ? 'No exercises found in this workout. Please contact your coach.' 
+            : 'No se encontraron ejercicios en este entrenamiento. Por favor contacta a tu entrenador.', 
+          type: 'error' 
+        });
+      }
+      
       setSessionView(data);
       
       // Initialize timer from session start time
@@ -191,9 +207,14 @@ export default function WorkoutExecutionNew({
       }
       
       setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading session view:', error);
-      setNotification({ message: lang === 'en' ? 'Failed to load workout' : 'Error al cargar entrenamiento', type: 'error' });
+      setNotification({ 
+        message: lang === 'en' 
+          ? `Failed to load workout: ${error.message}` 
+          : `Error al cargar entrenamiento: ${error.message}`, 
+        type: 'error' 
+      });
       setLoading(false);
     }
   };
@@ -554,7 +575,24 @@ export default function WorkoutExecutionNew({
 
       {/* Exercise List */}
       <div className="pb-32">
-        {sessionView.exercises.map((exercise, exerciseIdx) => {
+        {!sessionView.exercises || sessionView.exercises.length === 0 ? (
+          <div className="m-4 p-8 text-center">
+            <p className="text-slate-400 mb-4">
+              {lang === 'en' 
+                ? 'No exercises found in this workout.' 
+                : 'No se encontraron ejercicios en este entrenamiento.'}
+            </p>
+            <Button
+              onClick={() => setShowInsertExercise(true)}
+              variant="outline"
+              className="border-slate-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {lang === 'en' ? 'Add First Exercise' : 'Agregar Primer Ejercicio'}
+            </Button>
+          </div>
+        ) : (
+          sessionView.exercises.map((exercise, exerciseIdx) => {
           const restTimer = restTimers[exercise.workoutExerciseId];
           const isResting = restTimer?.isActive;
 
@@ -665,7 +703,7 @@ export default function WorkoutExecutionNew({
               </CardContent>
             </Card>
           );
-        })}
+        }))}
       </div>
 
       {/* Global Footer Actions */}

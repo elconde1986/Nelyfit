@@ -62,8 +62,21 @@ export async function GET(
       },
     });
 
-    if (!session || session.clientId !== user.id) {
+    if (!session) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
+    if (!session.workout) {
+      return NextResponse.json({ error: 'Workout not found for this session' }, { status: 404 });
+    }
+
+    console.log('Session workout sections:', session.workout.sections?.length || 0);
+    console.log('Total blocks:', session.workout.sections?.reduce((sum: number, s: any) => sum + (s.blocks?.length || 0), 0) || 0);
+    console.log('Total exercises:', session.workout.sections?.reduce((sum: number, s: any) => 
+      sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0) || 0);
+
+    if (session.clientId !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Get client for coach info
@@ -177,6 +190,8 @@ export async function GET(
         }
       }
     }
+
+    console.log('Total exercises built:', exercises.length);
 
     // Calculate metrics (placeholder for now)
     const metrics = {
