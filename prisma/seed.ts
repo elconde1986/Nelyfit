@@ -1825,15 +1825,27 @@ async function main() {
         take: 1,
       });
 
-      // If no workout exists, create one with exercises that have videos
-      if (!assignedWorkout) {
+      // If no workout exists or workout has no exercises, create/update one with exercises
+      let needsWorkout = !assignedWorkout;
+      if (assignedWorkout) {
+        // Check if workout has exercises
+        const exerciseCount = assignedWorkout.sections.reduce((sum: number, s: any) => 
+          sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0
+        );
+        if (exerciseCount === 0) {
+          needsWorkout = true;
+          console.log('⚠️ Workout exists but has no exercises, will create new one');
+        }
+      }
+
+      if (needsWorkout) {
         const coach = await prisma.user.findFirst({
           where: { email: 'coach@nelsyfit.demo' },
         });
 
         if (coach) {
-          // Get some exercises with videos
-          const exercisesWithVideos = await prisma.exercise.findMany({
+          // Get exercises (prefer with videos, but use any if needed)
+          let exercisesToUse = await prisma.exercise.findMany({
             where: {
               OR: [
                 { defaultVideoUrl: { not: null } },
@@ -1843,40 +1855,104 @@ async function main() {
             take: 5,
           });
 
-          if (exercisesWithVideos.length > 0) {
-            // Create a workout
+          // If no exercises with videos, get any exercises
+          if (exercisesToUse.length === 0) {
+            exercisesToUse = await prisma.exercise.findMany({
+              take: 5,
+            });
+          }
+
+          // If still no exercises, create some basic ones
+          if (exercisesToUse.length === 0) {
+            const basicExercises = [
+              { name: 'Squat', category: 'Lower Body', equipment: 'Bodyweight', musclesTargeted: ['quads', 'glutes'] },
+              { name: 'Push-up', category: 'Upper Body', equipment: 'Bodyweight', musclesTargeted: ['chest', 'triceps'] },
+              { name: 'Plank', category: 'Core', equipment: 'Bodyweight', musclesTargeted: ['abs'] },
+            ];
+
+            for (const ex of basicExercises) {
+              const created = await prisma.exercise.create({
+                data: {
+                  name: ex.name,
+                  category: ex.category,
+                  equipment: ex.equipment,
+                  musclesTargeted: ex.musclesTargeted,
+                  sets: 3,
+                  reps: 10,
+                  restSeconds: 60,
+                  isLibraryExercise: true,
+                },
+              });
+              exercisesToUse.push(created);
+            }
+          }
+
+          if (exercisesToUse.length > 0) {
+            // Delete old workout if it exists but has no exercises
+            if (assignedWorkout && assignedWorkout.id) {
+              await prisma.workout.delete({
+                where: { id: assignedWorkout.id },
+              }).catch(() => {}); // Ignore if already deleted
+            }
+
+            // Create a workout with multiple exercises
             assignedWorkout = await prisma.workout.create({
               data: {
-                name: 'Full Body Strength',
-                description: 'Complete full body workout with video demonstrations',
+                name: 'Full Body Strength - Today\'s Workout',
+                description: 'Complete full body workout for testing all features',
                 coachId: coach.id,
                 goal: 'STRENGTH',
                 difficulty: 'INTERMEDIATE',
                 estimatedDuration: 45,
                 sections: {
-                  create: {
-                    name: 'Main Workout',
-                    order: 0,
-                    blocks: {
-                      create: {
-                        type: 'STANDARD_SETS_REPS',
-                        order: 0,
-                        exercises: {
-                          create: exercisesWithVideos.slice(0, 3).map((ex, idx) => ({
-                            name: ex.name,
-                            category: ex.category,
-                            equipment: ex.equipment,
-                            musclesTargeted: ex.musclesTargeted || [],
-                            targetRepsBySet: [10, 10, 8],
-                            targetWeightBySet: [60, 65, 70],
-                            targetRestBySet: [60, 60, 90],
-                            order: idx,
-                            exerciseId: ex.id,
-                          })),
+                  create: [
+                    {
+                      name: 'Warm-up',
+                      order: 0,
+                      blocks: {
+                        create: {
+                          type: 'STANDARD_SETS_REPS',
+                          order: 0,
+                          exercises: {
+                            create: exercisesToUse.slice(0, 1).map((ex, idx) => ({
+                              name: ex.name,
+                              category: ex.category,
+                              equipment: ex.equipment,
+                              musclesTargeted: ex.musclesTargeted || [],
+                              targetRepsBySet: [10, 10],
+                              targetWeightBySet: null,
+                              targetRestBySet: [30, 30],
+                              order: idx,
+                              exerciseId: ex.id,
+                            })),
+                          },
                         },
                       },
                     },
-                  },
+                    {
+                      name: 'Main Workout',
+                      order: 1,
+                      blocks: {
+                        create: {
+                          type: 'STANDARD_SETS_REPS',
+                          order: 0,
+                          exercises: {
+                            create: exercisesToUse.slice(1, 4).map((ex, idx) => ({
+                              name: ex.name,
+                              category: ex.category,
+                              equipment: ex.equipment,
+                              musclesTargeted: ex.musclesTargeted || [],
+                              targetRepsBySet: [10, 10, 8],
+                              targetWeightBySet: [60, 65, 70],
+                              targetRestBySet: [60, 60, 90],
+                              order: idx,
+                              exerciseId: ex.id,
+                            })),
+                          },
+                        },
+                      },
+                    },
+                  ],
                 },
               },
               include: {
@@ -1899,7 +1975,7 @@ async function main() {
                 },
               },
             });
-            console.log('✅ Created workout with videos for seed data');
+            console.log(`✅ Created workout with ${exercisesToUse.length} exercises for seed data`);
           }
         }
       }
@@ -1949,7 +2025,7 @@ async function main() {
           });
           console.log(`✅ Created workout session with ID ${specificSessionId} for today (client@nelsyfit.demo)`);
         } else {
-          // Update existing session to ensure it's for today
+          // Update existing session to ensure it's for today and has the correct workout
           await prisma.workoutSession.update({
             where: { id: specificSessionId },
             data: {
@@ -1960,6 +2036,32 @@ async function main() {
             },
           });
           console.log(`✅ Updated workout session with ID ${specificSessionId} for today`);
+        }
+
+        // Verify the workout has exercises
+        const workoutCheck = await prisma.workout.findUnique({
+          where: { id: assignedWorkout.id },
+          include: {
+            sections: {
+              include: {
+                blocks: {
+                  include: {
+                    exercises: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const totalExercises = workoutCheck?.sections.reduce((sum: number, s: any) => 
+          sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0
+        ) || 0;
+
+        console.log(`📊 Workout "${assignedWorkout.name}" has ${totalExercises} exercises across ${workoutCheck?.sections.length || 0} sections`);
+        
+        if (totalExercises === 0) {
+          console.warn('⚠️ WARNING: Workout has no exercises! This will cause "No exercises found" error.');
         }
       }
     }
