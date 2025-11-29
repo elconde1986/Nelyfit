@@ -1896,7 +1896,7 @@ async function main() {
             }
 
             // Create a workout with multiple exercises
-            assignedWorkout = await prisma.workout.create({
+            const newWorkout = await prisma.workout.create({
               data: {
                 name: 'Full Body Strength - Today\'s Workout',
                 description: 'Complete full body workout for testing all features',
@@ -1919,9 +1919,9 @@ async function main() {
                               category: ex.category,
                               equipment: ex.equipment,
                               musclesTargeted: ex.musclesTargeted || [],
-                              targetRepsBySet: [10, 10],
-                              targetWeightBySet: null,
-                              targetRestBySet: [30, 30],
+                              targetRepsBySet: [10, 10] as any,
+                              targetWeightBySet: undefined,
+                              targetRestBySet: [30, 30] as any,
                               order: idx,
                               exerciseId: ex.id,
                             })),
@@ -1942,9 +1942,9 @@ async function main() {
                               category: ex.category,
                               equipment: ex.equipment,
                               musclesTargeted: ex.musclesTargeted || [],
-                              targetRepsBySet: [10, 10, 8],
-                              targetWeightBySet: [60, 65, 70],
-                              targetRestBySet: [60, 60, 90],
+                              targetRepsBySet: [10, 10, 8] as any,
+                              targetWeightBySet: [60, 65, 70] as any,
+                              targetRestBySet: [60, 60, 90] as any,
                               order: idx,
                               exerciseId: ex.id,
                             })),
@@ -1975,6 +1975,7 @@ async function main() {
                 },
               },
             });
+            assignedWorkout = newWorkout as any; // Type assertion to match the expected type
             console.log(`✅ Created workout with ${exercisesToUse.length} exercises for seed data`);
           }
         }
