@@ -10,22 +10,38 @@ export async function loginClient(formData: FormData) {
   const password = formData.get('password') as string;
 
   try {
+    console.log('[LOGIN] Attempting login for:', email);
+    console.log('[LOGIN] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('[LOGIN] DATABASE_URL type:', process.env.DATABASE_URL?.substring(0, 20));
+
     const user = await prisma.user.findUnique({
       where: { email },
       include: { client: true },
     });
 
+    console.log('[LOGIN] User found:', !!user);
+    if (user) {
+      console.log('[LOGIN] User role:', user.role);
+      console.log('[LOGIN] Has password:', !!user.password);
+      console.log('[LOGIN] Password length:', user.password?.length || 0);
+    }
+
     if (!user || user.role !== 'CLIENT') {
+      console.log('[LOGIN] Error: User not found or wrong role');
       return { error: 'Invalid email or password' };
     }
 
     // Password check with bcrypt
     if (!user.password) {
+      console.log('[LOGIN] Error: User has no password');
       return { error: 'Invalid email or password' };
     }
     
     const passwordMatch = await bcrypt.compare(password, user.password);
+    console.log('[LOGIN] Password match:', passwordMatch);
+    
     if (!passwordMatch) {
+      console.log('[LOGIN] Error: Password mismatch');
       return { error: 'Invalid email or password' };
     }
 
