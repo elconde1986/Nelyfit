@@ -46,10 +46,14 @@ async function verifyUsers() {
         include: {
           blocks: {
             include: {
-              exercises: true,
+              exercises: {
+                orderBy: { order: 'asc' },
+              },
             },
+            orderBy: { order: 'asc' },
           },
         },
+        orderBy: { order: 'asc' },
       },
     },
   });
@@ -58,8 +62,26 @@ async function verifyUsers() {
     const totalExercises = workout.sections?.reduce((sum: number, s: any) => 
       sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0) || 0;
     console.log(`✅ Upper Body Focus workout found:`);
+    console.log(`   - ID: ${workout.id}`);
     console.log(`   - Sections: ${workout.sections?.length || 0}`);
     console.log(`   - Total Exercises: ${totalExercises}`);
+    
+    // Show exercise details
+    if (workout.sections && workout.sections.length > 0) {
+      workout.sections.forEach((section: any, sIdx: number) => {
+        console.log(`   - Section ${sIdx + 1}: ${section.name}`);
+        if (section.blocks && section.blocks.length > 0) {
+          section.blocks.forEach((block: any, bIdx: number) => {
+            console.log(`     - Block ${bIdx + 1}: ${block.title || block.type}`);
+            if (block.exercises && block.exercises.length > 0) {
+              block.exercises.forEach((ex: any, eIdx: number) => {
+                console.log(`       - Exercise ${eIdx + 1}: ${ex.name}`);
+              });
+            }
+          });
+        }
+      });
+    }
   } else {
     console.log(`❌ Upper Body Focus workout NOT FOUND`);
   }
