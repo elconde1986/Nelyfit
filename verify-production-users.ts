@@ -38,8 +38,8 @@ async function verifyUsers() {
     }
   }
 
-  // Check workout
-  const workout = await prisma.workout.findFirst({
+  // Check workout - find the one WITH exercises (not legacy empty ones)
+  const allWorkouts = await prisma.workout.findMany({
     where: { name: 'Upper Body Focus' },
     include: {
       sections: {
@@ -56,7 +56,16 @@ async function verifyUsers() {
         orderBy: { order: 'asc' },
       },
     },
+    orderBy: { createdAt: 'desc' },
   });
+
+  // Find the workout that actually has exercises
+  const workout = allWorkouts.find((w: any) => {
+    const exerciseCount = w.sections.reduce((sum: number, s: any) => 
+      sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0
+    );
+    return exerciseCount > 0;
+  }) || null;
 
   if (workout) {
     const totalExercises = workout.sections?.reduce((sum: number, s: any) => 
