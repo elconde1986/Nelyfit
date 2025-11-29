@@ -1801,7 +1801,8 @@ async function main() {
 
     if (demoClient && demoClient.client) {
       // Find or create the specific "Upper Body Focus" workout for today
-      let assignedWorkout = await prisma.workout.findFirst({
+      // Find the one WITH exercises (not legacy empty ones)
+      const allWorkouts = await prisma.workout.findMany({
         where: {
           name: 'Upper Body Focus',
           coachId: { not: null },
@@ -1817,7 +1818,16 @@ async function main() {
             },
           },
         },
+        orderBy: { createdAt: 'desc' }, // Most recent first
       });
+
+      // Find the workout that actually has exercises
+      let assignedWorkout = allWorkouts.find((w: any) => {
+        const exerciseCount = w.sections.reduce((sum: number, s: any) => 
+          sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0
+        );
+        return exerciseCount > 0;
+      }) || null;
 
       // If "Upper Body Focus" doesn't exist or has no exercises, create/update it
       let needsWorkout = !assignedWorkout;
