@@ -1895,15 +1895,53 @@ async function main() {
               }).catch(() => {}); // Ignore if already deleted
             }
 
-            // Create a workout with multiple exercises
+            // Find or create specific exercises from the library that match the dashboard
+            const exerciseNames = [
+              'Thoracic Extension on Foam Roller',
+              '90/90 Hip Switches',
+              'Ankle Dorsiflexion Rock-Backs',
+              'Pigeon Stretch',
+            ];
+
+            const specificExercises = [];
+            for (const exName of exerciseNames) {
+              let exercise = await prisma.exercise.findFirst({
+                where: { name: { contains: exName, mode: 'insensitive' } },
+              });
+              
+              if (!exercise) {
+                // Create the exercise if it doesn't exist
+                exercise = await prisma.exercise.create({
+                  data: {
+                    name: exName,
+                    category: exName.includes('Thoracic') ? 'Mobility' : exName.includes('Pigeon') ? 'Stretch' : 'Mobility',
+                    equipment: exName.includes('Foam Roller') ? 'Foam Roller' : 'Bodyweight',
+                    musclesTargeted: exName.includes('Thoracic') ? ['t-spine'] : exName.includes('Hip') ? ['hips'] : exName.includes('Ankle') ? ['ankle'] : ['glutes'],
+                    sets: 1,
+                    reps: 8,
+                    restSeconds: 30,
+                    isLibraryExercise: true,
+                    modality: exName.includes('Pigeon') ? 'stretch' : 'mobility',
+                    bodyRegion: exName.includes('Thoracic') ? 'upper' : 'lower',
+                    difficulty: 'beginner',
+                  },
+                });
+              }
+              specificExercises.push(exercise);
+            }
+
+            // Use specific exercises if found, otherwise fall back to exercisesToUse
+            const finalExercises = specificExercises.length >= 4 ? specificExercises : exercisesToUse;
+
+            // Create a workout with multiple exercises matching the dashboard
             const newWorkout = await prisma.workout.create({
               data: {
-                name: 'Full Body Strength - Today\'s Workout',
-                description: 'Complete full body workout for testing all features',
+                name: 'Upper Body Focus',
+                description: 'Push & pull focus for upper body strength.',
                 coachId: coach.id,
                 goal: 'STRENGTH',
                 difficulty: 'INTERMEDIATE',
-                estimatedDuration: 45,
+                estimatedDuration: 30,
                 sections: {
                   create: [
                     {
@@ -1914,37 +1952,14 @@ async function main() {
                           type: 'STANDARD_SETS_REPS',
                           order: 0,
                           exercises: {
-                            create: exercisesToUse.slice(0, 1).map((ex: any, idx: number) => ({
+                            create: finalExercises.slice(0, 5).map((ex: any, idx: number) => ({
                               name: ex.name,
                               category: ex.category,
                               equipment: ex.equipment,
                               musclesTargeted: ex.musclesTargeted || [],
-                              targetRepsBySet: [10, 10] as any,
+                              targetRepsBySet: [8] as any, // 1 set: 8 reps as shown on dashboard
                               targetWeightBySet: undefined,
-                              targetRestBySet: [30, 30] as any,
-                              order: idx,
-                              exerciseId: ex.id,
-                            })),
-                          },
-                        },
-                      },
-                    },
-                    {
-                      name: 'Main Workout',
-                      order: 1,
-                      blocks: {
-                        create: {
-                          type: 'STANDARD_SETS_REPS',
-                          order: 0,
-                          exercises: {
-                            create: exercisesToUse.slice(1, 4).map((ex: any, idx: number) => ({
-                              name: ex.name,
-                              category: ex.category,
-                              equipment: ex.equipment,
-                              musclesTargeted: ex.musclesTargeted || [],
-                              targetRepsBySet: [10, 10, 8] as any,
-                              targetWeightBySet: [60, 65, 70] as any,
-                              targetRestBySet: [60, 60, 90] as any,
+                              targetRestBySet: [30] as any,
                               order: idx,
                               exerciseId: ex.id,
                             })),
@@ -2007,37 +2022,31 @@ async function main() {
           where: { id: specificSessionId },
         });
 
-        if (!existingSpecificSession) {
-          // Delete any existing session for today if it exists
-          if (existingAssignedSession && existingAssignedSession.id !== specificSessionId) {
-            await prisma.workoutSession.delete({
-              where: { id: existingAssignedSession.id },
-            });
-          }
-
-          await prisma.workoutSession.create({
-            data: {
-              id: specificSessionId,
-              clientId: demoClient.id,
-              workoutId: assignedWorkout.id,
-              status: 'IN_PROGRESS',
-              dateTimeStarted: today,
-            },
+        // Delete any existing session for today if it exists (to start fresh)
+        if (existingAssignedSession && existingAssignedSession.id !== specificSessionId) {
+          await prisma.workoutSession.delete({
+            where: { id: existingAssignedSession.id },
           });
-          console.log(`✅ Created workout session with ID ${specificSessionId} for today (client@nelsyfit.demo)`);
-        } else {
-          // Update existing session to ensure it's for today and has the correct workout
-          await prisma.workoutSession.update({
-            where: { id: specificSessionId },
-            data: {
-              clientId: demoClient.id,
-              workoutId: assignedWorkout.id,
-              status: 'IN_PROGRESS',
-              dateTimeStarted: today,
-            },
-          });
-          console.log(`✅ Updated workout session with ID ${specificSessionId} for today`);
         }
+
+        // Delete the specific session if it exists to recreate it
+        if (existingSpecificSession) {
+          await prisma.workoutSession.delete({
+            where: { id: specificSessionId },
+          });
+        }
+
+        // Create a new SCHEDULED session (not started yet)
+        await prisma.workoutSession.create({
+          data: {
+            id: specificSessionId,
+            clientId: demoClient.id,
+            workoutId: assignedWorkout.id,
+            status: 'IN_PROGRESS', // Start as IN_PROGRESS when client opens it
+            dateTimeStarted: today, // Scheduled for today
+          },
+        });
+        console.log(`✅ Created workout session with ID ${specificSessionId} for today (client@nelsyfit.demo)`);
 
         // Verify the workout has exercises
         const workoutCheck = await prisma.workout.findUnique({

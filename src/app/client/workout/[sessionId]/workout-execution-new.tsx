@@ -665,27 +665,34 @@ export default function WorkoutExecutionNew({
 
                 {/* Per-Set Table */}
                 <div className="space-y-2">
-                  <div className="grid grid-cols-4 gap-2 text-xs text-slate-400 mb-2 px-2">
+                  <div className="grid grid-cols-5 gap-2 text-xs text-slate-400 mb-2 px-2">
                     <div>{lang === 'en' ? 'Set' : 'Serie'}</div>
+                    <div>{lang === 'en' ? 'Planned' : 'Planificado'}</div>
                     <div>{lang === 'en' ? 'Previous' : 'Anterior'}</div>
                     <div>{lang === 'en' ? 'Reps' : 'Reps'}</div>
-                    <div>{lang === 'en' ? 'Lbs' : 'Kg'}</div>
+                    <div>{lang === 'en' ? 'Kg' : 'Kg'}</div>
                   </div>
 
                   {exercise.logs.setLogs.map((setLog, setIdx) => {
                     const previous = exercise.previousSessionSetLogs.find((p) => p.setIndex === setLog.setIndex);
                     const isEditing = editingSet?.exerciseId === exercise.workoutExerciseId && editingSet?.setIndex === setLog.setIndex;
+                    const plannedDisplay = setLog.plannedWeight 
+                      ? `${setLog.plannedReps} @ ${setLog.plannedWeight}kg`
+                      : `${setLog.plannedReps}`;
 
                     return (
                       <div
                         key={setLog.setIndex}
-                        className={`grid grid-cols-4 gap-2 p-2 rounded-lg transition-colors ${
+                        className={`grid grid-cols-5 gap-2 p-2 rounded-lg transition-colors ${
                           isEditing ? 'bg-emerald-500/20 border border-emerald-500/50' : 'bg-slate-800/50 hover:bg-slate-800'
                         }`}
                         onClick={() => setEditingSet({ exerciseId: exercise.workoutExerciseId, setIndex: setLog.setIndex })}
                       >
                         <div className="text-sm font-semibold text-center">{setLog.setIndex}</div>
-                        <div className="text-sm text-slate-400 text-center">
+                        <div className="text-xs text-slate-400 text-center">
+                          {plannedDisplay}
+                        </div>
+                        <div className="text-xs text-slate-500 text-center">
                           {previous ? `${previous.reps} × ${previous.weight}kg` : '—'}
                         </div>
                         <input

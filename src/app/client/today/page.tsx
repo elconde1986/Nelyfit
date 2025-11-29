@@ -100,6 +100,7 @@ export default async function ClientTodayPage() {
       },
       OR: [
         { status: 'IN_PROGRESS' },
+        { status: 'IN_PROGRESS' },
         { status: 'COMPLETED' },
       ],
     },
