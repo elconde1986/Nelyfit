@@ -461,16 +461,8 @@ async function main() {
         { name: 'Plank', sets: 3, durationSeconds: 30, restSeconds: 30 },
       ],
     },
-    {
-      name: 'Upper Body Focus',
-      description: 'Push & pull focus for upper body strength.',
-      exercises: [
-        { name: 'Bench Press', sets: 4, reps: 8, weight: 60, restSeconds: 90 },
-        { name: 'Pull-ups', sets: 3, reps: 6, restSeconds: 90 },
-        { name: 'Shoulder Press', sets: 3, reps: 10, weight: 20, restSeconds: 60 },
-        { name: 'Bicep Curls', sets: 3, reps: 12, weight: 15, restSeconds: 45 },
-      ],
-    },
+    // NOTE: "Upper Body Focus" is created later with new structure (sections/blocks)
+    // So we skip it here to avoid duplicates
     {
       name: 'Lower Body Focus',
       description: 'Leg day basics for lower body strength.',
@@ -1984,6 +1976,24 @@ async function main() {
             });
             assignedWorkout = newWorkout as any; // Type assertion to match the expected type
             console.log(`✅ Created "Upper Body Focus" workout with ${finalExercises.length} exercises for seed data`);
+            
+            // Delete the old legacy "Upper Body Focus" workout if it exists
+            if (assignedWorkout) {
+              const legacyWorkout = await prisma.workout.findFirst({
+                where: {
+                  name: 'Upper Body Focus',
+                  id: { not: assignedWorkout.id },
+                  sections: { none: {} }, // Old format has no sections
+                },
+              });
+              
+              if (legacyWorkout) {
+                await prisma.workout.delete({
+                  where: { id: legacyWorkout.id },
+                }).catch(() => {});
+                console.log(`✅ Deleted legacy "Upper Body Focus" workout`);
+              }
+            }
           }
         }
       }

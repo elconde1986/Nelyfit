@@ -90,81 +90,96 @@ export default async function ClientTodayPage() {
   let programDayTitle: string | null = null;
   let programDay = null as any;
 
-  // First, check for directly assigned workouts (scheduled sessions)
-  todaySession = await prisma.workoutSession.findFirst({
-    where: {
-      clientId: user.id, // WorkoutSession.clientId references User.id
-      dateTimeStarted: {
-        gte: today,
-        lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+  // FIRST PRIORITY: Check for directly assigned "Upper Body Focus" workout (even without session)
+  const coach = await prisma.user.findFirst({
+    where: { email: 'coach@nelsyfit.demo' },
+  });
+  
+  if (coach) {
+    const assignedWorkout = await prisma.workout.findFirst({
+      where: {
+        name: 'Upper Body Focus',
+        coachId: coach.id,
       },
-      OR: [
-        { status: 'IN_PROGRESS' },
-        { status: 'COMPLETED' },
-      ],
-    },
-    include: {
-      workout: {
-        include: {
-          sections: {
-            include: {
-              blocks: {
-                include: {
-                  exercises: {
-                    orderBy: { order: 'asc' },
-                  },
+      include: {
+        sections: {
+          include: {
+            blocks: {
+              include: {
+                exercises: {
+                  orderBy: { order: 'asc' },
                 },
-                orderBy: { order: 'asc' },
               },
+              orderBy: { order: 'asc' },
             },
-            orderBy: { order: 'asc' },
           },
+          orderBy: { order: 'asc' },
         },
       },
-    },
-    orderBy: { dateTimeStarted: 'desc' },
-  });
-
-  if (todaySession && todaySession.workout) {
-    workout = todaySession.workout;
-    programDayTitle = 'Assigned Workout';
-  } else {
-    // Check if there's an assigned workout for today (even without a session)
-    // Look for workouts assigned to this client's coach that should be done today
-    const coach = await prisma.user.findFirst({
-      where: { email: 'coach@nelsyfit.demo' },
     });
     
-    if (coach) {
-      const assignedWorkout = await prisma.workout.findFirst({
+    if (assignedWorkout) {
+      workout = assignedWorkout;
+      programDayTitle = 'Assigned Workout';
+      
+      // Check if there's already a session for this workout today
+      todaySession = await prisma.workoutSession.findFirst({
         where: {
-          name: 'Upper Body Focus',
-          coachId: coach.id,
-        },
-        include: {
-          sections: {
-            include: {
-              blocks: {
-                include: {
-                  exercises: {
-                    orderBy: { order: 'asc' },
-                  },
-                },
-                orderBy: { order: 'asc' },
-              },
-            },
-            orderBy: { order: 'asc' },
+          clientId: user.id,
+          workoutId: assignedWorkout.id,
+          dateTimeStarted: {
+            gte: today,
+            lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
           },
         },
+        orderBy: { dateTimeStarted: 'desc' },
       });
-      
-      if (assignedWorkout) {
-        workout = assignedWorkout;
-        programDayTitle = 'Assigned Workout';
-      }
+    }
+  }
+
+  // SECOND PRIORITY: Check for existing workout sessions
+  if (!workout) {
+    todaySession = await prisma.workoutSession.findFirst({
+      where: {
+        clientId: user.id, // WorkoutSession.clientId references User.id
+        dateTimeStarted: {
+          gte: today,
+          lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+        },
+        OR: [
+          { status: 'IN_PROGRESS' },
+          { status: 'COMPLETED' },
+        ],
+      },
+      include: {
+        workout: {
+          include: {
+            sections: {
+              include: {
+                blocks: {
+                  include: {
+                    exercises: {
+                      orderBy: { order: 'asc' },
+                    },
+                  },
+                  orderBy: { order: 'asc' },
+                },
+              },
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
+      },
+      orderBy: { dateTimeStarted: 'desc' },
+    });
+
+    if (todaySession && todaySession.workout) {
+      workout = todaySession.workout;
+      programDayTitle = 'Assigned Workout';
     }
   }
   
+  // THIRD PRIORITY: Fall back to program-based workout
   if (!workout) {
     // Fall back to program-based workout of the day (if available)
     if (client.currentProgram && client.programStartDate) {
