@@ -76,8 +76,27 @@ export async function GET(
       sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0) || 0;
     console.log('Total exercises:', totalExercises);
     
+    // Debug: Log section details
+    if (session.workout.sections) {
+      session.workout.sections.forEach((section: any, sIdx: number) => {
+        console.log(`Section ${sIdx}: ${section.name}, blocks: ${section.blocks?.length || 0}`);
+        if (section.blocks) {
+          section.blocks.forEach((block: any, bIdx: number) => {
+            console.log(`  Block ${bIdx}: ${block.title || 'Untitled'}, exercises: ${block.exercises?.length || 0}`);
+            if (block.exercises) {
+              block.exercises.forEach((ex: any, eIdx: number) => {
+                console.log(`    Exercise ${eIdx}: ${ex.name}, targetRepsBySet:`, ex.targetRepsBySet);
+              });
+            }
+          });
+        }
+      });
+    }
+    
     if (totalExercises === 0) {
       console.warn('⚠️ WARNING: Workout has no exercises! Client will see empty workout.');
+      console.warn('Workout ID:', session.workout.id);
+      console.warn('Workout name:', session.workout.name);
     }
 
     if (session.clientId !== user.id) {

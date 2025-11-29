@@ -29,10 +29,12 @@ export async function POST(request: NextRequest) {
 
     if (coach) {
       // Look for "Upper Body Focus" workout assigned for today
+      // Prioritize workouts with sections (new structure) over legacy ones
       workout = await prisma.workout.findFirst({
         where: {
           name: 'Upper Body Focus',
           coachId: coach.id,
+          sections: { some: {} }, // Must have at least one section
         },
         include: {
           sections: {
@@ -50,6 +52,17 @@ export async function POST(request: NextRequest) {
           },
         },
       });
+      
+      if (workout) {
+        const totalExercises = workout.sections?.reduce((sum: number, s: any) => 
+          sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0) || 0;
+        console.log(`✅ Found "Upper Body Focus" workout with ${totalExercises} exercises`);
+        
+        if (totalExercises === 0) {
+          console.warn('⚠️ WARNING: Workout has no exercises! Will not create session.');
+          workout = null; // Don't use this workout
+        }
+      }
     }
 
     // If no directly assigned workout, check program-based workout
@@ -148,8 +161,30 @@ export async function POST(request: NextRequest) {
     const setLogsToCreate: any[] = [];
     let setNumber = 1;
 
+    console.log(`Creating set logs for workout with ${workout.sections?.length || 0} sections`);
+    
+    if (!workout.sections || workout.sections.length === 0) {
+      console.error('❌ ERROR: Workout has no sections! Cannot create set logs.');
+      return NextResponse.json(
+        { error: 'Workout has no exercises. Please contact your coach.' },
+        { status: 400 }
+      );
+    }
+
     for (const section of workout.sections) {
+      console.log(`Processing section: ${section.name}, blocks: ${section.blocks?.length || 0}`);
+      if (!section.blocks || section.blocks.length === 0) {
+        console.warn(`⚠️ Section "${section.name}" has no blocks`);
+        continue;
+      }
+      
       for (const block of section.blocks) {
+        console.log(`Processing block: ${block.title || 'Untitled'}, exercises: ${block.exercises?.length || 0}`);
+        if (!block.exercises || block.exercises.length === 0) {
+          console.warn(`⚠️ Block "${block.title || 'Untitled'}" has no exercises`);
+          continue;
+        }
+        
         for (const exercise of block.exercises) {
           const targetReps = Array.isArray(exercise.targetRepsBySet)
             ? exercise.targetRepsBySet
@@ -162,6 +197,8 @@ export async function POST(request: NextRequest) {
             : exercise.targetWeightBySet
             ? [exercise.targetWeightBySet]
             : [null];
+
+          console.log(`  Exercise: ${exercise.name}, sets: ${targetReps.length}`);
 
           for (let i = 0; i < targetReps.length; i++) {
             setLogsToCreate.push({
@@ -178,10 +215,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log(`Created ${setLogsToCreate.length} set logs`);
+
     if (setLogsToCreate.length > 0) {
       await prisma.exerciseSetLog.createMany({
         data: setLogsToCreate,
       });
+      console.log(`✅ Pre-seeded ${setLogsToCreate.length} set logs for session ${session.id}`);
+    } else {
+      console.warn('⚠️ WARNING: No set logs created! Workout may have no exercises.');
     }
 
     return NextResponse.json({
