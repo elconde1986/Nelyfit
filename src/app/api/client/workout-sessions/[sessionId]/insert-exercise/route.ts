@@ -87,11 +87,40 @@ export async function POST(
 
     // If no target found, use last block of MAIN section
     if (!targetBlock) {
-      const mainSection = session.workout.sections.find((s: any) => 
+      let mainSection = session.workout.sections.find((s: any) => 
         s.name.toUpperCase().includes('MAIN')
       ) || session.workout.sections[session.workout.sections.length - 1];
 
-      if (mainSection && mainSection.blocks.length > 0) {
+      // If no sections exist, create one
+      if (!mainSection) {
+        const sectionCount = await prisma.workoutSection.count({
+          where: { workoutId: session.workoutId },
+        });
+        
+        mainSection = await prisma.workoutSection.create({
+          data: {
+            workoutId: session.workoutId,
+            name: 'Main Workout',
+            order: sectionCount,
+          },
+        });
+      }
+
+      // If section has no blocks, create one
+      if (mainSection.blocks.length === 0) {
+        const blockCount = await prisma.workoutBlock.count({
+          where: { sectionId: mainSection.id },
+        });
+        
+        targetBlock = await prisma.workoutBlock.create({
+          data: {
+            sectionId: mainSection.id,
+            type: 'STANDARD_SETS_REPS',
+            order: blockCount,
+          },
+        });
+        insertOrder = 1;
+      } else {
         targetBlock = mainSection.blocks[mainSection.blocks.length - 1];
         const maxOrder = Math.max(
           ...targetBlock.exercises.map((e: any) => e.order),
@@ -116,7 +145,7 @@ export async function POST(
         musclesTargeted: exercise.musclesTargeted,
         notes: exercise.notes,
         targetRepsBySet: exercise.reps ? [exercise.reps] : [8] as any,
-        targetWeightBySet: exercise.weight ? [exercise.weight] as any : null,
+        targetWeightBySet: exercise.weight ? [exercise.weight] as any : undefined,
         targetRestBySet: exercise.restSeconds ? [exercise.restSeconds] as any : [60] as any,
         order: insertOrder,
       },
