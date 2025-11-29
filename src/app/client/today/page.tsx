@@ -96,10 +96,12 @@ export default async function ClientTodayPage() {
   });
   
   if (coach) {
+    // Prioritize workouts with sections (new structure)
     const assignedWorkout = await prisma.workout.findFirst({
       where: {
         name: 'Upper Body Focus',
         coachId: coach.id,
+        sections: { some: {} }, // Must have at least one section
       },
       include: {
         sections: {
@@ -119,25 +121,57 @@ export default async function ClientTodayPage() {
     });
     
     if (assignedWorkout) {
-      workout = assignedWorkout;
-      programDayTitle = 'Assigned Workout';
+      // Verify workout has exercises
+      const totalExercises = assignedWorkout.sections?.reduce((sum: number, s: any) => 
+        sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0) || 0;
       
-      // Check if there's already a session for this workout today
-      todaySession = await prisma.workoutSession.findFirst({
-        where: {
-          clientId: user.id,
-          workoutId: assignedWorkout.id,
-          dateTimeStarted: {
-            gte: today,
-            lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+      if (totalExercises > 0) {
+        workout = assignedWorkout;
+        programDayTitle = 'Assigned Workout';
+        
+        // Check if there's already a session for this workout today (prioritize IN_PROGRESS)
+        todaySession = await prisma.workoutSession.findFirst({
+          where: {
+            clientId: user.id,
+            workoutId: assignedWorkout.id,
+            dateTimeStarted: {
+              gte: today,
+              lt: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+            },
+            OR: [
+              { status: 'IN_PROGRESS' },
+              { status: 'COMPLETED' },
+            ],
           },
-        },
-        orderBy: { dateTimeStarted: 'desc' },
-      });
+          include: {
+            workout: {
+              include: {
+                sections: {
+                  include: {
+                    blocks: {
+                      include: {
+                        exercises: {
+                          orderBy: { order: 'asc' },
+                        },
+                      },
+                      orderBy: { order: 'asc' },
+                    },
+                  },
+                  orderBy: { order: 'asc' },
+                },
+              },
+            },
+          },
+          orderBy: [
+            { status: 'asc' }, // IN_PROGRESS comes before COMPLETED
+            { dateTimeStarted: 'desc' },
+          ],
+        });
+      }
     }
   }
 
-  // SECOND PRIORITY: Check for existing workout sessions
+  // SECOND PRIORITY: Check for existing workout sessions (if workout not found above)
   if (!workout) {
     todaySession = await prisma.workoutSession.findFirst({
       where: {
@@ -170,12 +204,21 @@ export default async function ClientTodayPage() {
           },
         },
       },
-      orderBy: { dateTimeStarted: 'desc' },
+      orderBy: [
+        { status: 'asc' }, // IN_PROGRESS comes before COMPLETED
+        { dateTimeStarted: 'desc' },
+      ],
     });
 
     if (todaySession && todaySession.workout) {
-      workout = todaySession.workout;
-      programDayTitle = 'Assigned Workout';
+      // Verify workout has exercises
+      const totalExercises = todaySession.workout.sections?.reduce((sum: number, s: any) => 
+        sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0) || 0;
+      
+      if (totalExercises > 0) {
+        workout = todaySession.workout;
+        programDayTitle = 'Assigned Workout';
+      }
     }
   }
   
