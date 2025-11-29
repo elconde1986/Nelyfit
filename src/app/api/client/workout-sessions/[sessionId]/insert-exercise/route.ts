@@ -87,7 +87,7 @@ export async function POST(
 
     // If no target found, use last block of MAIN section
     if (!targetBlock) {
-      let mainSection = session.workout.sections.find((s: any) => 
+      let mainSection: any = session.workout.sections.find((s: any) => 
         s.name.toUpperCase().includes('MAIN')
       ) || session.workout.sections[session.workout.sections.length - 1];
 
@@ -97,13 +97,28 @@ export async function POST(
           where: { workoutId: session.workoutId },
         });
         
-        mainSection = await prisma.workoutSection.create({
+        const newSection = await prisma.workoutSection.create({
           data: {
             workoutId: session.workoutId,
             name: 'Main Workout',
             order: sectionCount,
           },
         });
+        mainSection = { ...newSection, blocks: [] };
+      }
+
+      // Fetch blocks for the section if not already loaded
+      if (!mainSection.blocks || mainSection.blocks.length === 0) {
+        const blocks = await prisma.workoutBlock.findMany({
+          where: { sectionId: mainSection.id },
+          include: {
+            exercises: {
+              orderBy: { order: 'asc' },
+            },
+          },
+          orderBy: { order: 'asc' },
+        });
+        mainSection.blocks = blocks;
       }
 
       // If section has no blocks, create one

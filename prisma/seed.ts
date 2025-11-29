@@ -1914,7 +1914,7 @@ async function main() {
                           type: 'STANDARD_SETS_REPS',
                           order: 0,
                           exercises: {
-                            create: exercisesToUse.slice(0, 1).map((ex, idx) => ({
+                            create: exercisesToUse.slice(0, 1).map((ex: any, idx: number) => ({
                               name: ex.name,
                               category: ex.category,
                               equipment: ex.equipment,
@@ -1937,7 +1937,7 @@ async function main() {
                           type: 'STANDARD_SETS_REPS',
                           order: 0,
                           exercises: {
-                            create: exercisesToUse.slice(1, 4).map((ex, idx) => ({
+                            create: exercisesToUse.slice(1, 4).map((ex: any, idx: number) => ({
                               name: ex.name,
                               category: ex.category,
                               equipment: ex.equipment,
