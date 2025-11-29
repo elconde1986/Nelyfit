@@ -1922,48 +1922,44 @@ async function main() {
           },
         });
 
-        if (!existingAssignedSession) {
-          // Create session with specific ID for testing
-          const specificSessionId = 'cmijfjzxk0001dxafb5fba5dk';
-          
-          // Check if session with this ID already exists
-          const existingSpecificSession = await prisma.workoutSession.findUnique({
-            where: { id: specificSessionId },
-          });
+        // Create or update session with specific ID for testing
+        const specificSessionId = 'cmijfjzxk0001dxafb5fba5dk';
+        
+        // Check if session with this ID already exists
+        const existingSpecificSession = await prisma.workoutSession.findUnique({
+          where: { id: specificSessionId },
+        });
 
-          if (!existingSpecificSession) {
-            await prisma.workoutSession.create({
-              data: {
-                id: specificSessionId,
-                clientId: demoClient.id,
-                workoutId: assignedWorkout.id,
-                status: 'IN_PROGRESS',
-                dateTimeStarted: today,
-              },
+        if (!existingSpecificSession) {
+          // Delete any existing session for today if it exists
+          if (existingAssignedSession && existingAssignedSession.id !== specificSessionId) {
+            await prisma.workoutSession.delete({
+              where: { id: existingAssignedSession.id },
             });
-            console.log(`✅ Created workout session with ID ${specificSessionId} for today (client@nelsyfit.demo)`);
-          } else {
-            // Update existing session to ensure it's for today
-            await prisma.workoutSession.update({
-              where: { id: specificSessionId },
-              data: {
-                clientId: demoClient.id,
-                workoutId: assignedWorkout.id,
-                status: 'IN_PROGRESS',
-                dateTimeStarted: today,
-              },
-            });
-            console.log(`✅ Updated workout session with ID ${specificSessionId} for today`);
           }
-        } else if (existingAssignedSession.id !== 'cmijfjzxk0001dxafb5fba5dk') {
-          // If there's a different session, update it to use the specific ID
-          await prisma.workoutSession.update({
-            where: { id: existingAssignedSession.id },
+
+          await prisma.workoutSession.create({
             data: {
-              id: 'cmijfjzxk0001dxafb5fba5dk',
+              id: specificSessionId,
+              clientId: demoClient.id,
+              workoutId: assignedWorkout.id,
+              status: 'IN_PROGRESS',
+              dateTimeStarted: today,
             },
           });
-          console.log(`✅ Updated session ID to cmijfjzxk0001dxafb5fba5dk`);
+          console.log(`✅ Created workout session with ID ${specificSessionId} for today (client@nelsyfit.demo)`);
+        } else {
+          // Update existing session to ensure it's for today
+          await prisma.workoutSession.update({
+            where: { id: specificSessionId },
+            data: {
+              clientId: demoClient.id,
+              workoutId: assignedWorkout.id,
+              status: 'IN_PROGRESS',
+              dateTimeStarted: today,
+            },
+          });
+          console.log(`✅ Updated workout session with ID ${specificSessionId} for today`);
         }
       }
     }
