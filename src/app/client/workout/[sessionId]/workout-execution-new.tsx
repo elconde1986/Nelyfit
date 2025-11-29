@@ -377,8 +377,23 @@ export default function WorkoutExecutionNew({
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to insert exercise');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to insert exercise' }));
+        const errorMessage = errorData.error || errorData.message || 'Failed to insert exercise';
+        
+        // Filter out "Integration needed" type messages
+        if (errorMessage.toLowerCase().includes('integration needed')) {
+          throw new Error(lang === 'en' 
+            ? 'Exercise insertion is not available. Please contact support.' 
+            : 'La inserción de ejercicios no está disponible. Por favor contacta soporte.');
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to insert exercise');
       }
 
       // Reload session view to show the new exercise
@@ -402,7 +417,7 @@ export default function WorkoutExecutionNew({
           : `Error al agregar ejercicio: ${error.message}`,
         type: 'error'
       });
-      setTimeout(() => setNotification(null), 3000);
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setSaving(false);
     }
@@ -487,12 +502,14 @@ export default function WorkoutExecutionNew({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 safe-top safe-bottom">
-      {/* Notification Toast */}
+      {/* Notification Toast - Above header */}
       {notification && (
-        <div className={`fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg ${
+        <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] px-4 py-3 rounded-lg shadow-xl max-w-md w-[90%] mx-auto ${
           notification.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
         }`}>
-          {notification.message}
+          <div className="flex items-center justify-center">
+            <span className="text-sm font-medium">{notification.message}</span>
+          </div>
         </div>
       )}
 
