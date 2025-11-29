@@ -24,7 +24,25 @@ export default async function ClientTodayPage() {
         include: {
           days: {
             orderBy: { dayIndex: 'asc' },
-            include: { workout: { include: { exercises: true } } },
+            include: { 
+              workout: { 
+                include: { 
+                  sections: {
+                    include: {
+                      blocks: {
+                        include: {
+                          exercises: {
+                            orderBy: { order: 'asc' },
+                          },
+                        },
+                        orderBy: { order: 'asc' },
+                      },
+                    },
+                    orderBy: { order: 'asc' },
+                  },
+                } 
+              } 
+            },
           },
         },
       },
@@ -92,10 +110,14 @@ export default async function ClientTodayPage() {
             include: {
               blocks: {
                 include: {
-                  exercises: true,
+                  exercises: {
+                    orderBy: { order: 'asc' },
+                  },
                 },
+                orderBy: { order: 'asc' },
               },
             },
+            orderBy: { order: 'asc' },
           },
         },
       },

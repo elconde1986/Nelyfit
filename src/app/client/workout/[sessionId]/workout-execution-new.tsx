@@ -344,18 +344,44 @@ export default function WorkoutExecutionNew({
 
 
   const handleInsertExercise = async (exercise: any) => {
-    // Note: This would require a server action to add an exercise to the workout session
-    // For now, we'll just show a notification that this feature needs backend support
-    setNotification({
-      message: lang === 'en' 
-        ? `Exercise "${exercise.name}" selected. Backend integration needed.` 
-        : `Ejercicio "${exercise.name}" seleccionado. Se necesita integración del backend.`,
-      type: 'success'
-    });
-    setTimeout(() => setNotification(null), 3000);
-    setShowInsertExercise(false);
-    setExerciseSearchQuery('');
-    setExerciseSearchResults([]);
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/client/workout-sessions/${sessionId}/insert-exercise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exerciseId: exercise.id }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to insert exercise');
+      }
+
+      // Reload session view to show the new exercise
+      await loadSessionView();
+
+      setNotification({
+        message: lang === 'en' 
+          ? `Exercise "${exercise.name}" added to workout` 
+          : `Ejercicio "${exercise.name}" agregado al entrenamiento`,
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 3000);
+      setShowInsertExercise(false);
+      setExerciseSearchQuery('');
+      setExerciseSearchResults([]);
+    } catch (error: any) {
+      console.error('Error inserting exercise:', error);
+      setNotification({
+        message: lang === 'en' 
+          ? `Failed to add exercise: ${error.message}` 
+          : `Error al agregar ejercicio: ${error.message}`,
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const startRestTimer = (exerciseId: string, restSeconds: number) => {

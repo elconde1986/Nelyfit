@@ -367,15 +367,44 @@ export default function ClientTodayClient(props: Props) {
                   )}
                 </div>
                 <ul className="space-y-2 text-xs sm:text-sm text-slate-300 ml-2">
-                  {workout.exercises?.map((ex: any) => (
-                    <li key={ex.id} className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span className="flex-1">{ex.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {ex.sets}x{ex.reps ?? '?'}
-                      </Badge>
-                    </li>
-                  ))}
+                  {workout.sections?.map((section: any) => 
+                    section.blocks?.map((block: any) =>
+                      block.exercises?.map((ex: any) => {
+                        const targetReps = Array.isArray(ex.targetRepsBySet) 
+                          ? ex.targetRepsBySet 
+                          : typeof ex.targetRepsBySet === 'number'
+                          ? [ex.targetRepsBySet]
+                          : [];
+                        const targetWeights = Array.isArray(ex.targetWeightBySet)
+                          ? ex.targetWeightBySet
+                          : ex.targetWeightBySet && typeof ex.targetWeightBySet === 'number'
+                          ? [ex.targetWeightBySet]
+                          : [];
+                        
+                        const setsCount = targetReps.length || 0;
+                        const repsDisplay = targetReps.length > 0
+                          ? targetReps.map((r: number, idx: number) => {
+                              const weight = targetWeights[idx];
+                              return weight ? `${r}@${weight}kg` : `${r}`;
+                            }).join(' / ')
+                          : '—';
+
+                        return (
+                          <li key={ex.id} className="flex items-start gap-2">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium">{ex.name}</span>
+                              {setsCount > 0 && (
+                                <div className="text-xs text-slate-400 mt-0.5">
+                                  {setsCount} {lang === 'en' ? 'sets' : 'series'}: {repsDisplay}
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })
+                    )
+                  ).flat(2)}
                 </ul>
                 <div className="flex gap-2">
                   {todaySession?.status === 'IN_PROGRESS' ? (
