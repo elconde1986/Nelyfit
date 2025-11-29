@@ -72,8 +72,13 @@ export async function GET(
 
     console.log('Session workout sections:', session.workout.sections?.length || 0);
     console.log('Total blocks:', session.workout.sections?.reduce((sum: number, s: any) => sum + (s.blocks?.length || 0), 0) || 0);
-    console.log('Total exercises:', session.workout.sections?.reduce((sum: number, s: any) => 
-      sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0) || 0);
+    const totalExercises = session.workout.sections?.reduce((sum: number, s: any) => 
+      sum + (s.blocks?.reduce((blockSum: number, b: any) => blockSum + (b.exercises?.length || 0), 0) || 0), 0) || 0;
+    console.log('Total exercises:', totalExercises);
+    
+    if (totalExercises === 0) {
+      console.warn('⚠️ WARNING: Workout has no exercises! Client will see empty workout.');
+    }
 
     if (session.clientId !== user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
