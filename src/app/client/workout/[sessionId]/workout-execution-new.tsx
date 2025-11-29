@@ -514,7 +514,7 @@ export default function WorkoutExecutionNew({
       )}
 
       {/* Top App Bar */}
-      <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-lg border-b border-slate-800">
+      <div className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-lg border-b border-slate-800 safe-top">
         <div className="flex items-center justify-between px-4 py-3">
           <Button
             variant="ghost"
@@ -591,7 +591,7 @@ export default function WorkoutExecutionNew({
       </div>
 
       {/* Exercise List */}
-      <div className="pb-32">
+      <div className="pb-32 pt-2">
         {!sessionView.exercises || sessionView.exercises.length === 0 ? (
           <div className="m-4 p-8 text-center">
             <p className="text-slate-400 mb-4">

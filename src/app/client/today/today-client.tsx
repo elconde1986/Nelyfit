@@ -191,7 +191,7 @@ export default function ClientTodayClient(props: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 relative overflow-hidden safe-top pb-20">
+    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 relative overflow-hidden safe-top pb-24">
       {showConfetti && (
         <ReactConfetti width={width} height={height} numberOfPieces={200} recycle={false} />
       )}
