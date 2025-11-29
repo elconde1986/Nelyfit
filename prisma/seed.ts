@@ -299,7 +299,10 @@ async function main() {
   // ============================================
   const admin = await prisma.user.upsert({
     where: { email: 'admin@nelsyfit.demo' },
-    update: {},
+    update: {
+      // Always update password to ensure it's set correctly
+      password: hashedPassword,
+    },
     create: {
       email: 'admin@nelsyfit.demo',
       name: 'Admin User',
@@ -316,7 +319,10 @@ async function main() {
   // ============================================
   const coach1 = await prisma.user.upsert({
     where: { email: 'coach@nelsyfit.demo' },
-    update: {},
+    update: {
+      // Always update password to ensure it's set correctly
+      password: hashedPassword,
+    },
     create: {
       email: 'coach@nelsyfit.demo',
       name: 'Demo Coach',
@@ -329,7 +335,10 @@ async function main() {
 
   const coach2 = await prisma.user.upsert({
     where: { email: 'coach2@nelsyfit.demo' },
-    update: {},
+    update: {
+      // Always update password to ensure it's set correctly
+      password: hashedPassword,
+    },
     create: {
       email: 'coach2@nelsyfit.demo',
       name: 'Sarah Johnson',
@@ -418,7 +427,10 @@ async function main() {
 
     const user = await prisma.user.upsert({
       where: { email: clientData.email },
-      update: {},
+      update: {
+        // Always update password to ensure it's set correctly
+        password: hashedPassword,
+      },
       create: {
         email: clientData.email,
         name: clientData.name,
