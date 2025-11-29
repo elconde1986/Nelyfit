@@ -1796,36 +1796,26 @@ async function main() {
     });
 
     if (demoClient && demoClient.client) {
-      // Find or create a workout with videos
+      // Find or create the specific "Upper Body Focus" workout for today
       let assignedWorkout = await prisma.workout.findFirst({
         where: {
+          name: 'Upper Body Focus',
           coachId: { not: null },
-          sections: { some: {} },
         },
         include: {
           sections: {
             include: {
               blocks: {
                 include: {
-                  exercises: {
-                    include: {
-                      exercise: {
-                        include: {
-                          coachVideos: true,
-                        },
-                      },
-                    },
-                  },
+                  exercises: true,
                 },
               },
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
-        take: 1,
       });
 
-      // If no workout exists or workout has no exercises, create/update one with exercises
+      // If "Upper Body Focus" doesn't exist or has no exercises, create/update it
       let needsWorkout = !assignedWorkout;
       if (assignedWorkout) {
         // Check if workout has exercises
@@ -1834,7 +1824,9 @@ async function main() {
         );
         if (exerciseCount === 0) {
           needsWorkout = true;
-          console.log('⚠️ Workout exists but has no exercises, will create new one');
+          console.log('⚠️ "Upper Body Focus" workout exists but has no exercises, will recreate');
+        } else {
+          console.log(`✅ Found existing "Upper Body Focus" workout with ${exerciseCount} exercises`);
         }
       }
 
@@ -1991,7 +1983,7 @@ async function main() {
               },
             });
             assignedWorkout = newWorkout as any; // Type assertion to match the expected type
-            console.log(`✅ Created workout with ${exercisesToUse.length} exercises for seed data`);
+            console.log(`✅ Created "Upper Body Focus" workout with ${finalExercises.length} exercises for seed data`);
           }
         }
       }
@@ -2036,17 +2028,9 @@ async function main() {
           });
         }
 
-        // Create a new SCHEDULED session (not started yet)
-        await prisma.workoutSession.create({
-          data: {
-            id: specificSessionId,
-            clientId: demoClient.id,
-            workoutId: assignedWorkout.id,
-            status: 'IN_PROGRESS', // Start as IN_PROGRESS when client opens it
-            dateTimeStarted: today, // Scheduled for today
-          },
-        });
-        console.log(`✅ Created workout session with ID ${specificSessionId} for today (client@nelsyfit.demo)`);
+        // Don't create session yet - let user click "Start Workout" to create it
+        // This ensures the workout shows on dashboard but isn't started
+        console.log(`✅ Workout "${assignedWorkout.name}" ready for today (client@nelsyfit.demo) - session will be created when user starts workout`);
 
         // Verify the workout has exercises
         const workoutCheck = await prisma.workout.findUnique({

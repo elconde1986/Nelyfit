@@ -100,7 +100,6 @@ export default async function ClientTodayPage() {
       },
       OR: [
         { status: 'IN_PROGRESS' },
-        { status: 'IN_PROGRESS' },
         { status: 'COMPLETED' },
       ],
     },
@@ -130,6 +129,43 @@ export default async function ClientTodayPage() {
     workout = todaySession.workout;
     programDayTitle = 'Assigned Workout';
   } else {
+    // Check if there's an assigned workout for today (even without a session)
+    // Look for workouts assigned to this client's coach that should be done today
+    const coach = await prisma.user.findFirst({
+      where: { email: 'coach@nelsyfit.demo' },
+    });
+    
+    if (coach) {
+      const assignedWorkout = await prisma.workout.findFirst({
+        where: {
+          name: 'Upper Body Focus',
+          coachId: coach.id,
+        },
+        include: {
+          sections: {
+            include: {
+              blocks: {
+                include: {
+                  exercises: {
+                    orderBy: { order: 'asc' },
+                  },
+                },
+                orderBy: { order: 'asc' },
+              },
+            },
+            orderBy: { order: 'asc' },
+          },
+        },
+      });
+      
+      if (assignedWorkout) {
+        workout = assignedWorkout;
+        programDayTitle = 'Assigned Workout';
+      }
+    }
+  }
+  
+  if (!workout) {
     // Fall back to program-based workout of the day (if available)
     if (client.currentProgram && client.programStartDate) {
       const start = startOfDay(client.programStartDate);

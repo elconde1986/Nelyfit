@@ -19,60 +19,102 @@ export async function POST(request: NextRequest) {
     const dateParam = body.date ? new Date(body.date) : new Date();
     const targetDate = startOfDay(dateParam);
 
-    // Get client with program
-    const client = await prisma.client.findUnique({
-      where: { id: user.clientId },
-      include: {
-        currentProgram: {
-          include: {
-            days: {
-              orderBy: { dayIndex: 'asc' },
-              include: {
-                workout: true,
+    // First, check for directly assigned workout (not program-based)
+    const coach = await prisma.user.findFirst({
+      where: { email: 'coach@nelsyfit.demo' },
+    });
+
+    let workout = null as any;
+    let programDay = null as any;
+
+    if (coach) {
+      // Look for "Upper Body Focus" workout assigned for today
+      workout = await prisma.workout.findFirst({
+        where: {
+          name: 'Upper Body Focus',
+          coachId: coach.id,
+        },
+        include: {
+          sections: {
+            include: {
+              blocks: {
+                include: {
+                  exercises: {
+                    orderBy: { order: 'asc' },
+                  },
+                },
+                orderBy: { order: 'asc' },
+              },
+            },
+            orderBy: { order: 'asc' },
+          },
+        },
+      });
+    }
+
+    // If no directly assigned workout, check program-based workout
+    if (!workout) {
+      const client = await prisma.client.findUnique({
+        where: { id: user.clientId },
+        include: {
+          currentProgram: {
+            include: {
+              days: {
+                orderBy: { dayIndex: 'asc' },
+                include: {
+                  workout: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    if (!client || !client.currentProgram || !client.programStartDate) {
-      return NextResponse.json(
-        { error: 'No active program assigned' },
-        { status: 400 }
-      );
+      if (client && client.currentProgram && client.programStartDate) {
+        const programStart = startOfDay(client.programStartDate);
+        const diffDays = Math.floor(
+          (targetDate.getTime() - programStart.getTime()) / (1000 * 60 * 60 * 24)
+        ) + 1;
+
+        programDay = client.currentProgram.days.find(
+          (d) => d.dayIndex === diffDays
+        );
+
+        if (programDay && !programDay.isRestDay && programDay.workoutId) {
+          workout = await prisma.workout.findUnique({
+            where: { id: programDay.workoutId },
+            include: {
+              sections: {
+                include: {
+                  blocks: {
+                    include: {
+                      exercises: {
+                        orderBy: { order: 'asc' },
+                      },
+                    },
+                    orderBy: { order: 'asc' },
+                  },
+                },
+                orderBy: { order: 'asc' },
+              },
+            },
+          });
+        }
+      }
     }
 
-    // Calculate which program day this date corresponds to
-    const programStart = startOfDay(client.programStartDate);
-    const diffDays = Math.floor(
-      (targetDate.getTime() - programStart.getTime()) / (1000 * 60 * 60 * 24)
-    ) + 1;
-
-    const programDay = client.currentProgram.days.find(
-      (d) => d.dayIndex === diffDays
-    );
-
-    if (!programDay) {
+    if (!workout) {
       return NextResponse.json(
-        { error: 'No program day found for this date' },
+        { error: 'No workout assigned for today' },
         { status: 404 }
-      );
-    }
-
-    if (programDay.isRestDay || !programDay.workoutId) {
-      return NextResponse.json(
-        { error: 'This is a rest day - no workout scheduled' },
-        { status: 400 }
       );
     }
 
     // Check if session already exists for this date
     const existingSession = await prisma.workoutSession.findFirst({
       where: {
-        clientId: user.id, // Use user.id, not user.clientId (WorkoutSession.clientId references User.id)
-        workoutId: programDay.workoutId,
-        programDayId: programDay.id,
+        clientId: user.id,
+        workoutId: workout.id,
         dateTimeStarted: {
           gte: targetDate,
           lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000),
@@ -90,36 +132,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get workout exercises to pre-seed set logs
-    const workout = await prisma.workout.findUnique({
-      where: { id: programDay.workoutId },
-      include: {
-        sections: {
-          include: {
-            blocks: {
-              include: {
-                exercises: {
-                  orderBy: { order: 'asc' },
-                },
-              },
-              orderBy: { order: 'asc' },
-            },
-          },
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
-
-    if (!workout) {
-      return NextResponse.json({ error: 'Workout not found' }, { status: 404 });
-    }
-
+    // Workout already loaded above with all sections/blocks/exercises
     // Create new workout session
     const session = await prisma.workoutSession.create({
       data: {
         clientId: user.id, // Use user.id, not user.clientId (WorkoutSession.clientId references User.id)
-        workoutId: programDay.workoutId,
-        programDayId: programDay.id,
+        workoutId: workout.id,
+        programDayId: programDay?.id || null,
         dateTimeStarted: new Date(),
         status: 'IN_PROGRESS',
       },
