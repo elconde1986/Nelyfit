@@ -14,6 +14,7 @@ import {
   Flame,
   Heart,
   Timer,
+  Repeat,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -85,6 +86,8 @@ export default function WorkoutExecutionNew({
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showInsertExercise, setShowInsertExercise] = useState(false);
+  const [showSwapExercise, setShowSwapExercise] = useState(false);
+  const [swapTargetExerciseId, setSwapTargetExerciseId] = useState<string | null>(null);
   const [restTimers, setRestTimers] = useState<Record<string, RestTimer>>({});
   const [editingSet, setEditingSet] = useState<{ exerciseId: string; setIndex: number } | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -133,10 +136,10 @@ export default function WorkoutExecutionNew({
 
   // Load exercises when modal opens
   useEffect(() => {
-    if (showInsertExercise && exerciseSearchQuery === '') {
+    if ((showInsertExercise || showSwapExercise) && exerciseSearchQuery === '') {
       searchExercises(''); // Load all exercises initially
     }
-  }, [showInsertExercise, searchExercises, exerciseSearchQuery]);
+  }, [showInsertExercise, showSwapExercise, searchExercises, exerciseSearchQuery]);
 
   // Timer effect
   useEffect(() => {
@@ -384,6 +387,61 @@ export default function WorkoutExecutionNew({
     }
   };
 
+  const handleSwapExercise = async (exercise: any) => {
+    if (!swapTargetExerciseId) return;
+    
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/client/workout-sessions/${sessionId}/swap-exercise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          workoutExerciseId: swapTargetExerciseId,
+          newExerciseId: exercise.id 
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to swap exercise');
+      }
+
+      // Reload session view to show the swapped exercise
+      await loadSessionView();
+
+      setNotification({
+        message: lang === 'en' 
+          ? `Exercise swapped to "${exercise.name}"` 
+          : `Ejercicio cambiado a "${exercise.name}"`,
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 3000);
+      setShowSwapExercise(false);
+      setSwapTargetExerciseId(null);
+      setExerciseSearchQuery('');
+      setExerciseSearchResults([]);
+    } catch (error: any) {
+      console.error('Error swapping exercise:', error);
+      setNotification({
+        message: lang === 'en' 
+          ? `Failed to swap exercise: ${error.message}` 
+          : `Error al cambiar ejercicio: ${error.message}`,
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openSwapModal = (workoutExerciseId: string) => {
+    setSwapTargetExerciseId(workoutExerciseId);
+    setShowSwapExercise(true);
+    if (exerciseSearchQuery === '') {
+      searchExercises(''); // Load all exercises
+    }
+  };
+
   const startRestTimer = (exerciseId: string, restSeconds: number) => {
     setRestTimers({
       ...restTimers,
@@ -520,7 +578,11 @@ export default function WorkoutExecutionNew({
                     <h3 className="font-bold text-lg mb-1">{exercise.name}</h3>
                     <p className="text-sm text-slate-400">{exercise.prescription}</p>
                   </div>
-                  <button className="text-slate-400 hover:text-slate-200">
+                  <button 
+                    onClick={() => openSwapModal(exercise.workoutExerciseId)}
+                    className="text-slate-400 hover:text-emerald-400 transition-colors"
+                    title={lang === 'en' ? 'Swap exercise' : 'Cambiar ejercicio'}
+                  >
                     <MoreVertical className="w-5 h-5" />
                   </button>
                 </div>
@@ -651,6 +713,153 @@ export default function WorkoutExecutionNew({
                   {lang === 'en' ? 'Keep working' : 'Seguir trabajando'}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Swap Exercise Modal */}
+      {showSwapExercise && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="max-w-2xl w-full mx-4 bg-slate-900 border-slate-800 max-h-[80vh] flex flex-col">
+            <CardContent className="p-6 flex flex-col flex-1 overflow-hidden">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">{lang === 'en' ? 'Swap Exercise' : 'Cambiar Ejercicio'}</h3>
+                <button onClick={() => {
+                  setShowSwapExercise(false);
+                  setSwapTargetExerciseId(null);
+                  setExerciseSearchQuery('');
+                  setExerciseSearchResults([]);
+                }} className="text-slate-400 hover:text-slate-200">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Search Bar */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={exerciseSearchQuery}
+                  onChange={(e) => {
+                    setExerciseSearchQuery(e.target.value);
+                    searchExercises(e.target.value);
+                  }}
+                  placeholder={lang === 'en' ? 'Search exercises...' : 'Buscar ejercicios...'}
+                  className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              {/* Filters */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                <select
+                  value={exerciseSearchFilters.modality}
+                  onChange={(e) => {
+                    const newFilters = { ...exerciseSearchFilters, modality: e.target.value };
+                    setExerciseSearchFilters(newFilters);
+                    searchExercises(exerciseSearchQuery, newFilters);
+                  }}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+                >
+                  <option value="">{lang === 'en' ? 'All Types' : 'Todos'}</option>
+                  <option value="strength">{lang === 'en' ? 'Strength' : 'Fuerza'}</option>
+                  <option value="cardio">{lang === 'en' ? 'Cardio' : 'Cardio'}</option>
+                  <option value="mobility">{lang === 'en' ? 'Mobility' : 'Movilidad'}</option>
+                  <option value="core">{lang === 'en' ? 'Core' : 'Core'}</option>
+                </select>
+                <select
+                  value={exerciseSearchFilters.bodyRegion}
+                  onChange={(e) => {
+                    const newFilters = { ...exerciseSearchFilters, bodyRegion: e.target.value };
+                    setExerciseSearchFilters(newFilters);
+                    searchExercises(exerciseSearchQuery, newFilters);
+                  }}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+                >
+                  <option value="">{lang === 'en' ? 'All Regions' : 'Todas'}</option>
+                  <option value="upper">{lang === 'en' ? 'Upper' : 'Superior'}</option>
+                  <option value="lower">{lang === 'en' ? 'Lower' : 'Inferior'}</option>
+                  <option value="core">{lang === 'en' ? 'Core' : 'Core'}</option>
+                  <option value="full">{lang === 'en' ? 'Full Body' : 'Cuerpo Completo'}</option>
+                </select>
+                <select
+                  value={exerciseSearchFilters.equipment}
+                  onChange={(e) => {
+                    const newFilters = { ...exerciseSearchFilters, equipment: e.target.value };
+                    setExerciseSearchFilters(newFilters);
+                    searchExercises(exerciseSearchQuery, newFilters);
+                  }}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+                >
+                  <option value="">{lang === 'en' ? 'All Equipment' : 'Todo'}</option>
+                  <option value="bodyweight">{lang === 'en' ? 'Bodyweight' : 'Peso Corporal'}</option>
+                  <option value="dumbbell">{lang === 'en' ? 'Dumbbell' : 'Mancuerna'}</option>
+                  <option value="barbell">{lang === 'en' ? 'Barbell' : 'Barra'}</option>
+                  <option value="machine">{lang === 'en' ? 'Machine' : 'Máquina'}</option>
+                </select>
+                <select
+                  value={exerciseSearchFilters.difficulty}
+                  onChange={(e) => {
+                    const newFilters = { ...exerciseSearchFilters, difficulty: e.target.value };
+                    setExerciseSearchFilters(newFilters);
+                    searchExercises(exerciseSearchQuery, newFilters);
+                  }}
+                  className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-50 text-sm"
+                >
+                  <option value="">{lang === 'en' ? 'All Levels' : 'Todos'}</option>
+                  <option value="beginner">{lang === 'en' ? 'Beginner' : 'Principiante'}</option>
+                  <option value="intermediate">{lang === 'en' ? 'Intermediate' : 'Intermedio'}</option>
+                  <option value="advanced">{lang === 'en' ? 'Advanced' : 'Avanzado'}</option>
+                </select>
+              </div>
+
+              {/* Exercise Results */}
+              <div className="flex-1 overflow-y-auto space-y-2">
+                {loadingExercises ? (
+                  <div className="text-center py-8 text-slate-400">
+                    {lang === 'en' ? 'Loading exercises...' : 'Cargando ejercicios...'}
+                  </div>
+                ) : exerciseSearchResults.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400">
+                    {lang === 'en' ? 'No exercises found. Try a different search.' : 'No se encontraron ejercicios. Intenta otra búsqueda.'}
+                  </div>
+                ) : (
+                  exerciseSearchResults.map((exercise) => (
+                    <div
+                      key={exercise.id}
+                      onClick={() => handleSwapExercise(exercise)}
+                      className="p-3 bg-slate-800 rounded-lg hover:bg-slate-700 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold text-slate-50">{exercise.name}</h4>
+                          <div className="flex gap-2 mt-1 flex-wrap">
+                            {exercise.category && (
+                              <span className="text-xs text-slate-400">{exercise.category}</span>
+                            )}
+                            {exercise.equipment && (
+                              <span className="text-xs text-slate-400">• {exercise.equipment}</span>
+                            )}
+                          </div>
+                        </div>
+                        <X className="w-5 h-5 text-emerald-400 rotate-45" />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <Button
+                onClick={() => {
+                  setShowSwapExercise(false);
+                  setSwapTargetExerciseId(null);
+                  setExerciseSearchQuery('');
+                  setExerciseSearchResults([]);
+                }}
+                variant="outline"
+                className="w-full border-slate-700 mt-4"
+              >
+                {lang === 'en' ? 'Cancel' : 'Cancelar'}
+              </Button>
             </CardContent>
           </Card>
         </div>
