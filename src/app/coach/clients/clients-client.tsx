@@ -30,11 +30,11 @@ type Client = {
     name: string | null;
     email: string | null;
   } | null;
-  gamification: {
+  gamification?: {
     streakDays: number;
     level: number;
   } | null;
-  currentProgram: {
+  currentProgram?: {
     id: string;
     name: string;
   } | null;
