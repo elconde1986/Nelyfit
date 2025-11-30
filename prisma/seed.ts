@@ -2141,7 +2141,7 @@ async function main() {
         authProvider: 'EMAIL',
         emailVerified: false,
         status: testUserData.status,
-        lastPasswordChangeAt: testUserData.status === 'ACTIVE' ? new Date() : null,
+        lastPasswordChangeAt: null, // Test users are PENDING/INACTIVE, so no password change date
       },
     });
   }
