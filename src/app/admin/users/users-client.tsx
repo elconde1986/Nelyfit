@@ -65,14 +65,19 @@ export default function UsersClient({ initialLang }: { initialLang: Lang }) {
     type: 'success' | 'error';
   } | null>(null);
 
-  const loadUsers = async () => {
+  const loadUsers = async (overridePage?: number, overrideFilters?: { search?: string; role?: string; status?: string }) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (roleFilter !== 'all') params.append('role', roleFilter);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      params.append('page', page.toString());
+      const currentSearch = overrideFilters?.search !== undefined ? overrideFilters.search : search;
+      const currentRole = overrideFilters?.role !== undefined ? overrideFilters.role : roleFilter;
+      const currentStatus = overrideFilters?.status !== undefined ? overrideFilters.status : statusFilter;
+      const currentPage = overridePage ?? page;
+      
+      if (currentSearch) params.append('search', currentSearch);
+      if (currentRole !== 'all') params.append('role', currentRole);
+      if (currentStatus !== 'all') params.append('status', currentStatus);
+      params.append('page', currentPage.toString());
       params.append('pageSize', '20');
 
       const response = await fetch(`/api/admin/users?${params.toString()}`);
