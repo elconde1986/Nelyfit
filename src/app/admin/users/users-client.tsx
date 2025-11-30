@@ -109,11 +109,6 @@ export default function UsersClient({ initialLang }: { initialLang: Lang }) {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Load users when component mounts
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
   const handleDeactivate = async (userId: string) => {
     if (!confirm(lang === 'en' ? 'Deactivate this user?' : '¿Desactivar este usuario?')) {
       return;
@@ -472,9 +467,9 @@ export default function UsersClient({ initialLang }: { initialLang: Lang }) {
             setSearch('');
             setRoleFilter('all');
             setStatusFilter('all');
-            // Force reload with page 1 and no filters
-            await loadUsers(1);
             setPage(1);
+            // Force reload with page 1 and no filters
+            await loadUsers(1, { search: '', role: 'all', status: 'all' });
             setNotification({
               message: lang === 'en' ? 'User created successfully' : 'Usuario creado exitosamente',
               type: 'success',
