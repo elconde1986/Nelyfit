@@ -43,6 +43,18 @@ export default async function UserDetailPage({
     redirect('/admin/users');
   }
 
+  // Serialize dates to strings for client component and convert null to undefined
+  const serializedUser = {
+    ...targetUser,
+    createdAt: targetUser.createdAt.toISOString(),
+    updatedAt: targetUser.updatedAt.toISOString(),
+    lastLoginAt: targetUser.lastLoginAt?.toISOString() || null,
+    lastPasswordChangeAt: targetUser.lastPasswordChangeAt?.toISOString() || null,
+    trialStart: targetUser.trialStart?.toISOString() || null,
+    trialEnd: targetUser.trialEnd?.toISOString() || null,
+    client: targetUser.client || undefined,
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 safe-top safe-bottom">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -50,7 +62,7 @@ export default async function UserDetailPage({
           <LanguageToggle currentLang={lang} />
         </div>
 
-        <UserDetailClient user={targetUser} lang={lang} />
+        <UserDetailClient user={serializedUser} lang={lang} />
       </div>
     </main>
   );

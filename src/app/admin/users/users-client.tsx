@@ -214,14 +214,14 @@ export default function UsersClient({ initialLang }: { initialLang: Lang }) {
     switch (status) {
       case 'ACTIVE':
         return (
-          <Badge variant="success" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
+          <Badge variant="default" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/50">
             <CheckCircle className="w-3 h-3 mr-1" />
             {lang === 'en' ? 'Active' : 'Activo'}
           </Badge>
         );
       case 'INACTIVE':
         return (
-          <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/50">
+          <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/50">
             <Ban className="w-3 h-3 mr-1" />
             {lang === 'en' ? 'Inactive' : 'Inactivo'}
           </Badge>
