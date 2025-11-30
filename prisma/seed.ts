@@ -302,6 +302,8 @@ async function main() {
     update: {
       // Always update password to ensure it's set correctly
       password: hashedPassword,
+      status: 'ACTIVE',
+      lastPasswordChangeAt: new Date(),
     },
     create: {
       email: 'admin@nelsyfit.demo',
@@ -310,6 +312,8 @@ async function main() {
       password: hashedPassword,
       authProvider: 'EMAIL',
       emailVerified: true,
+      status: 'ACTIVE',
+      lastPasswordChangeAt: new Date(),
     },
   });
   console.log('✅ Admin user created');
@@ -322,6 +326,8 @@ async function main() {
     update: {
       // Always update password to ensure it's set correctly
       password: hashedPassword,
+      status: 'ACTIVE',
+      lastPasswordChangeAt: new Date(),
     },
     create: {
       email: 'coach@nelsyfit.demo',
@@ -330,6 +336,8 @@ async function main() {
       password: hashedPassword,
       authProvider: 'EMAIL',
       emailVerified: true,
+      status: 'ACTIVE',
+      lastPasswordChangeAt: new Date(),
     },
   });
 
@@ -338,6 +346,8 @@ async function main() {
     update: {
       // Always update password to ensure it's set correctly
       password: hashedPassword,
+      status: 'ACTIVE',
+      lastPasswordChangeAt: new Date(),
     },
     create: {
       email: 'coach2@nelsyfit.demo',
@@ -346,6 +356,8 @@ async function main() {
       password: hashedPassword,
       authProvider: 'EMAIL',
       emailVerified: true,
+      status: 'ACTIVE',
+      lastPasswordChangeAt: new Date(),
     },
   });
   console.log('✅ Coaches created');
@@ -430,6 +442,8 @@ async function main() {
       update: {
         // Always update password to ensure it's set correctly
         password: hashedPassword,
+        status: 'ACTIVE',
+        lastPasswordChangeAt: new Date(),
       },
       create: {
         email: clientData.email,
@@ -438,6 +452,8 @@ async function main() {
         password: hashedPassword,
         authProvider: 'EMAIL',
         emailVerified: true,
+        status: 'ACTIVE',
+        lastPasswordChangeAt: new Date(),
         clientId: client.id,
         profile: {
           create: {

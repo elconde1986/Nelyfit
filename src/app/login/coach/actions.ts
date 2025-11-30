@@ -20,6 +20,15 @@ export async function loginCoach(formData: FormData) {
       return { error: 'Invalid email or password' };
     }
 
+    // Check user status
+    if (user.status === 'INACTIVE') {
+      return { error: 'Account is inactive. Please contact support.' };
+    }
+
+    if (user.status === 'PENDING') {
+      return { error: 'Account is pending activation. Please contact support.' };
+    }
+
     // Password check with bcrypt
     if (!user.password) {
       return { error: 'Invalid email or password' };
@@ -29,6 +38,12 @@ export async function loginCoach(formData: FormData) {
     if (!passwordMatch) {
       return { error: 'Invalid email or password' };
     }
+
+    // Update last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
 
     // Set session cookie
     const cookieStore = await cookies();
