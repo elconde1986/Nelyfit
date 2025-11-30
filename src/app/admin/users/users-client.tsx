@@ -109,6 +109,11 @@ export default function UsersClient({ initialLang }: { initialLang: Lang }) {
     return () => clearTimeout(timer);
   }, [search]);
 
+  // Load users when component mounts
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
   const handleDeactivate = async (userId: string) => {
     if (!confirm(lang === 'en' ? 'Deactivate this user?' : '¿Desactivar este usuario?')) {
       return;
@@ -461,9 +466,15 @@ export default function UsersClient({ initialLang }: { initialLang: Lang }) {
         <CreateUserModal
           lang={lang}
           onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowCreateModal(false);
-            loadUsers();
+            // Reset filters and search to show the new user
+            setSearch('');
+            setRoleFilter('all');
+            setStatusFilter('all');
+            // Force reload with page 1 and no filters
+            await loadUsers(1);
+            setPage(1);
             setNotification({
               message: lang === 'en' ? 'User created successfully' : 'Usuario creado exitosamente',
               type: 'success',
@@ -518,6 +529,7 @@ function CreateUserModal({
       if (data.temporaryPassword) {
         setTemporaryPassword(data.temporaryPassword);
       } else {
+        // User created without temporary password, call onSuccess immediately
         onSuccess();
       }
     } catch (err: any) {

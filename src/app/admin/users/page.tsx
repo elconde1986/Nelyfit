@@ -1,6 +1,9 @@
 import { requireAuth, getLang } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { LanguageToggle } from '@/components/LanguageToggle';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { prisma } from '@/lib/prisma';
 import UsersClient from './users-client';
@@ -32,6 +35,14 @@ export default async function AdminUsersPage() {
         </div>
 
         <header className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin/dashboard">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {lang === 'en' ? 'Back to Dashboard' : 'Volver al Panel'}
+              </Link>
+            </Button>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-bold">
             <span className="gradient-text">
               {lang === 'en' ? 'User Management' : 'Gestión de Usuarios'}
