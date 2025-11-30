@@ -2109,6 +2109,77 @@ async function main() {
     }
   }
 
+  // ============================================
+  // CREATE TEST USERS WITH DIFFERENT STATUSES
+  // ============================================
+  const testUsers = [
+    {
+      email: 'pending@nelsyfit.demo',
+      name: 'Pending User',
+      role: 'CLIENT' as const,
+      status: 'PENDING' as const,
+    },
+    {
+      email: 'inactive@nelsyfit.demo',
+      name: 'Inactive User',
+      role: 'COACH' as const,
+      status: 'INACTIVE' as const,
+    },
+  ];
+
+  for (const testUserData of testUsers) {
+    await prisma.user.upsert({
+      where: { email: testUserData.email },
+      update: {
+        status: testUserData.status,
+      },
+      create: {
+        email: testUserData.email,
+        name: testUserData.name,
+        role: testUserData.role,
+        password: hashedPassword,
+        authProvider: 'EMAIL',
+        emailVerified: false,
+        status: testUserData.status,
+        lastPasswordChangeAt: testUserData.status === 'ACTIVE' ? new Date() : null,
+      },
+    });
+  }
+  console.log('✅ Test users with different statuses created');
+
+  // ============================================
+  // CREATE AUDIT LOG ENTRIES
+  // ============================================
+  await prisma.auditLog.createMany({
+    data: [
+      {
+        actorId: admin.id,
+        actorRole: 'ADMIN',
+        actionType: 'USER_CREATED',
+        targetType: 'USER',
+        targetId: coach1.id,
+        metadata: {
+          role: 'COACH',
+          status: 'ACTIVE',
+          createdBy: admin.id,
+        },
+      },
+      {
+        actorId: admin.id,
+        actorRole: 'ADMIN',
+        actionType: 'USER_CREATED',
+        targetType: 'USER',
+        targetId: createdClients[0].user.id,
+        metadata: {
+          role: 'CLIENT',
+          status: 'ACTIVE',
+          createdBy: admin.id,
+        },
+      },
+    ],
+  });
+  console.log('✅ Audit log entries created');
+
   console.log('\n🎉 Comprehensive seed completed successfully!');
   console.log('\n📋 Test Accounts:');
   console.log('  Admin: admin@nelsyfit.demo / demo');
@@ -2117,6 +2188,9 @@ async function main() {
   console.log('  Client 2: client2@nelsyfit.demo / demo (Spanish, 3-day streak)');
   console.log('  Client 3: client3@nelsyfit.demo / demo (14-day streak, Premium)');
   console.log('  Client 4: client4@nelsyfit.demo / demo (New user)');
+  console.log('  Test Users:');
+  console.log('    - pending@nelsyfit.demo / demo (PENDING status)');
+  console.log('    - inactive@nelsyfit.demo / demo (INACTIVE status)');
   console.log('\n🔑 Access Codes:');
   console.log('  TRIAL2024 - 7-day trial code');
   console.log('  COACH2024 - Coach invite code');
