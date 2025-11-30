@@ -22,6 +22,7 @@ import {
   Award,
   LogOut,
   MessageSquare,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,7 @@ type Props = {
   notifications: { id: string; title: string; body: string }[];
   programDayTitle: string | null;
   todaySession: any;
+  hasCoach: boolean;
 };
 
 type Lang = 'en' | 'es';
@@ -57,6 +59,7 @@ const STRINGS = {
     todaysWorkout: "Today's workout",
     todaysHabits: "Today's habits",
     noWorkout: 'No workout scheduled today. Focus on habits and streaks.',
+    noCoach: 'Waiting for coach assignment. Your coach will assign workouts and programs soon!',
     levelLabel: 'Level',
     streak: (d: number) => `Streak: ${d} day${d === 1 ? '' : 's'}`,
     xpToNext: (rem: number) => `XP to next level: ${rem}`,
@@ -69,6 +72,7 @@ const STRINGS = {
     todaysWorkout: 'Entrenamiento de hoy',
     todaysHabits: 'Hábitos de hoy',
     noWorkout: 'No tienes entrenamiento hoy. Enfócate en los hábitos y la racha.',
+    noCoach: 'Esperando asignación de entrenador. ¡Tu entrenador asignará entrenamientos y programas pronto!',
     levelLabel: 'Nivel',
     streak: (d: number) => `Racha: ${d} día${d === 1 ? '' : 's'}`,
     xpToNext: (rem: number) => `XP para el siguiente nivel: ${rem}`,
@@ -126,6 +130,7 @@ export default function ClientTodayClient(props: Props) {
     notifications,
     programDayTitle,
     todaySession,
+    hasCoach,
   } = props;
 
   const [lang, setLang] = useState<Lang>(initialLang || 'en');
@@ -340,15 +345,31 @@ export default function ClientTodayClient(props: Props) {
               <Dumbbell className="w-4 h-4 text-emerald-400" />
               <h2 className="text-sm sm:text-base font-bold">{t.todaysWorkout}</h2>
             </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/client/program-map">
-                <Map className="w-3 h-3 mr-1" />
-                {lang === 'en' ? 'Map' : 'Mapa'}
-              </Link>
-            </Button>
+            {hasCoach && (
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/client/program-map">
+                  <Map className="w-3 h-3 mr-1" />
+                  {lang === 'en' ? 'Map' : 'Mapa'}
+                </Link>
+              </Button>
+            )}
           </div>
           <Card className="space-y-3">
-            {!workout ? (
+            {!hasCoach ? (
+              <div className="py-6 px-4 text-center space-y-3">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto">
+                  <User className="w-8 h-8 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-slate-200 text-sm sm:text-base font-semibold mb-2">
+                    {lang === 'en' ? 'Waiting for Coach Assignment' : 'Esperando Asignación de Entrenador'}
+                  </p>
+                  <p className="text-slate-400 text-xs sm:text-sm">
+                    {t.noCoach}
+                  </p>
+                </div>
+              </div>
+            ) : !workout ? (
               <p className="text-slate-300 text-sm sm:text-base py-2 flex items-center gap-2">
                 <Target className="w-4 h-4 text-slate-500" />
                 {t.noWorkout}

@@ -19,6 +19,13 @@ export default async function ClientTodayPage() {
   const client = await prisma.client.findUnique({
     where: { id: user.clientId },
     include: {
+      coach: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       gamification: true,
       currentProgram: {
         include: {
@@ -272,6 +279,7 @@ export default async function ClientTodayPage() {
       notifications={client.notifications}
       programDayTitle={programDayTitle}
       todaySession={todaySession}
+      hasCoach={!!client.coach}
     />
   );
 }

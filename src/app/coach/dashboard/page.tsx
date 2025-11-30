@@ -73,6 +73,12 @@ export default async function CoachDashboardPage() {
           </div>
           <nav className="flex flex-wrap gap-2 shrink-0">
             <Button asChild variant="secondary" size="sm">
+              <Link href="/coach/clients">
+                <Users className="w-3 h-3 mr-1" />
+                {lang === 'en' ? 'Clients' : 'Clientes'}
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
               <Link href="/coach/inbox">
                 <Mail className="w-3 h-3 mr-1" />
                 {t.inbox}
