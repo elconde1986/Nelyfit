@@ -19,7 +19,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Lang } from '@/lib/i18n';
-import { assignClientToCoach } from './actions';
+import { assignClientToCoach, createClient } from './actions';
+import { X } from 'lucide-react';
 
 type Client = {
   id: string;
@@ -54,6 +55,9 @@ export default function ClientsClient({
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [assigningClientId, setAssigningClientId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creatingClient, setCreatingClient] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
   const [notification, setNotification] = useState<{
     message: string;
     type: 'success' | 'error';
@@ -87,6 +91,47 @@ export default function ClientsClient({
       setTimeout(() => setNotification(null), 3000);
     } finally {
       setAssigningClientId(null);
+    }
+  };
+
+  const handleCreateClient = async (formData: FormData) => {
+    setCreatingClient(true);
+    try {
+      const result = await createClient({
+        name: formData.get('name') as string,
+        email: formData.get('email') as string,
+        phone: formData.get('phone') as string || undefined,
+      });
+
+      if (result.success && result.temporaryPassword) {
+        setTemporaryPassword(result.temporaryPassword);
+        setNotification({
+          message: lang === 'en' ? 'Client created successfully' : 'Cliente creado exitosamente',
+          type: 'success',
+        });
+      } else {
+        setNotification({
+          message: result.error || (lang === 'en' ? 'Failed to create client' : 'Error al crear cliente'),
+          type: 'error',
+        });
+        setTimeout(() => setNotification(null), 3000);
+      }
+    } catch (error) {
+      setNotification({
+        message: lang === 'en' ? 'Failed to create client' : 'Error al crear cliente',
+        type: 'error',
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setCreatingClient(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setTemporaryPassword(null);
+    if (temporaryPassword) {
+      router.refresh();
     }
   };
 
@@ -124,6 +169,10 @@ export default function ClientsClient({
               : 'Gestiona tus clientes y asigna nuevos'}
           </p>
         </div>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <UserPlus className="w-4 h-4 mr-2" />
+          {lang === 'en' ? 'Add New Client' : 'Agregar Cliente'}
+        </Button>
       </div>
 
       {/* Notification */}
@@ -282,6 +331,154 @@ export default function ClientsClient({
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Create Client Modal */}
+      {showCreateModal && (
+        <CreateClientModal
+          lang={lang}
+          creatingClient={creatingClient}
+          temporaryPassword={temporaryPassword}
+          onClose={handleCloseModal}
+          onSubmit={handleCreateClient}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateClientModal({
+  lang,
+  creatingClient,
+  temporaryPassword,
+  onClose,
+  onSubmit,
+}: {
+  lang: Lang;
+  creatingClient: boolean;
+  temporaryPassword: string | null;
+  onClose: () => void;
+  onSubmit: (formData: FormData) => void;
+}) {
+  if (temporaryPassword) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Card className="max-w-md w-full mx-4 bg-slate-900 border-slate-800">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>{lang === 'en' ? 'Client Created' : 'Cliente Creado'}</CardTitle>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-lg">
+              <p className="text-sm text-emerald-400 mb-2">
+                {lang === 'en' ? 'Temporary Password:' : 'Contraseña Temporal:'}
+              </p>
+              <p className="font-mono text-lg font-bold text-emerald-300 break-all">
+                {temporaryPassword}
+              </p>
+            </div>
+            <p className="text-sm text-slate-400">
+              {lang === 'en'
+                ? 'Share this password securely with the client. They will need to change it on first login.'
+                : 'Comparte esta contraseña de forma segura con el cliente. Necesitarán cambiarla en el primer inicio de sesión.'}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  navigator.clipboard.writeText(temporaryPassword);
+                  alert(lang === 'en' ? 'Password copied!' : '¡Contraseña copiada!');
+                }}
+              >
+                {lang === 'en' ? 'Copy Password' : 'Copiar Contraseña'}
+              </Button>
+              <Button className="flex-1" onClick={onClose}>
+                {lang === 'en' ? 'Done' : 'Listo'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <Card className="max-w-md w-full mx-4 bg-slate-900 border-slate-800 max-h-[90vh] overflow-y-auto">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>{lang === 'en' ? 'Add New Client' : 'Agregar Nuevo Cliente'}</CardTitle>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form action={onSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">
+                {lang === 'en' ? 'Name' : 'Nombre'} *
+              </label>
+              <Input
+                name="name"
+                required
+                placeholder={lang === 'en' ? 'Full name' : 'Nombre completo'}
+                className="bg-slate-900 border-slate-700"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">
+                {lang === 'en' ? 'Email' : 'Correo'} *
+              </label>
+              <Input
+                name="email"
+                type="email"
+                required
+                placeholder="client@example.com"
+                className="bg-slate-900 border-slate-700"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">
+                {lang === 'en' ? 'Phone' : 'Teléfono'} {lang === 'en' ? '(Optional)' : '(Opcional)'}
+              </label>
+              <Input
+                name="phone"
+                type="tel"
+                placeholder={lang === 'en' ? '+1 234 567 8900' : '+1 234 567 8900'}
+                className="bg-slate-900 border-slate-700"
+              />
+            </div>
+
+            <p className="text-xs text-slate-400">
+              {lang === 'en'
+                ? 'A temporary password will be generated and shown after creation.'
+                : 'Se generará una contraseña temporal que se mostrará después de la creación.'}
+            </p>
+
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+                {lang === 'en' ? 'Cancel' : 'Cancelar'}
+              </Button>
+              <Button type="submit" className="flex-1" disabled={creatingClient}>
+                {creatingClient
+                  ? lang === 'en'
+                    ? 'Creating...'
+                    : 'Creando...'
+                  : lang === 'en'
+                  ? 'Create Client'
+                  : 'Crear Cliente'}
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
     </div>
