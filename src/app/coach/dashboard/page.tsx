@@ -65,7 +65,11 @@ export default async function CoachDashboardPage() {
               <p className="text-xs text-slate-400 uppercase tracking-wider">{t.coachView}</p>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-              {t.welcomeBack} <span className="gradient-text">{coach.name ?? 'Coach'}</span>
+              {t.welcomeBack} <span className="gradient-text">{
+                (coach.name && coach.name !== 'Demo Coach') 
+                  ? coach.name 
+                  : coach.email?.split('@')[0] || 'Coach'
+              }</span>
             </h1>
             <p className="text-sm sm:text-base text-slate-400">
               {t.quickLook}
